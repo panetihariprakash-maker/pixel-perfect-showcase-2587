@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 
 interface Msg { from: "bot" | "user"; text: string; link?: { to: "/rooms" | "/concierge" | "/activities" | "/dashboard"; label: string } }
 
-export function AssistantWidget() {
+export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
   const { bookings } = useStore();
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<Language>("English");
@@ -18,6 +18,7 @@ export function AssistantWidget() {
   const end = useRef<HTMLDivElement>(null);
   const tr = t(lang);
 
+  useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, open]);
 
   const answer = (key: QuickKey): Msg => {

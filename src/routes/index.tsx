@@ -31,11 +31,8 @@ function Section({ eyebrow, title, children, link }: { eyebrow: string; title: s
 }
 
 function Home() {
-  const [assistantKey, setAssistantKey] = useState(0);
-  const openAssistant = () => {
-    setAssistantKey((k) => k + 1);
-    setTimeout(() => (document.querySelector('[aria-label="Open AI Guest Assistant"]') as HTMLButtonElement | null)?.click(), 0);
-  };
+  const [openSignal, setOpenSignal] = useState(0);
+  const openAssistant = () => setOpenSignal((k) => k + 1);
 
   return (
     <div>
@@ -124,7 +121,7 @@ function Home() {
       </section>
 
       <EnquirySection />
-      <AssistantWidget key={assistantKey} />
+      <AssistantWidget openSignal={openSignal} />
     </div>
   );
 }
