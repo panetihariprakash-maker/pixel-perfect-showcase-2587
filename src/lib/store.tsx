@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   seedBookings, roomUnits as seedUnits, opsTasks as seedTasks,
   type Booking, type BookingStatus, type PaymentStatus, type RoomUnit, type RoomReadiness, type OpsTask, type TaskStatus,
@@ -37,7 +37,9 @@ interface Store extends State {
 const KEY = "azure-ridge-demo-v1";
 const initial = (): State => ({ role: "guest", bookings: seedBookings(), units: seedUnits, tasks: seedTasks, enquiries: [], plans: [] });
 
-const Ctx = createContext<Store | null>(null);
+// Keep one context instance across hot reloads so provider and consumers always match.
+const g = globalThis as unknown as { __azureStoreCtx?: React.Context<Store | null> };
+const Ctx = (g.__azureStoreCtx ??= createContext<Store | null>(null));
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initial);
