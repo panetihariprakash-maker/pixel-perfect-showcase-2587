@@ -8,9 +8,11 @@ import { ConciergeSection } from "@/components/guest/ConciergeSection";
 import { RoomsSection } from "@/components/guest/RoomsSection";
 import { ActivitiesSection } from "@/components/guest/ActivitiesSection";
 import { EnquirySection } from "@/components/guest/EnquirySection";
+import { AssistantWidget } from "@/components/AssistantWidget";
+import { MessageCircle } from "lucide-react";
 
 const hubNav = [
-  ["concierge", "AI Travel Concierge"], ["rooms", "Rooms & Villas"], ["activities", "Activities & Trek Advisor"],
+  ["assistant", "AI Guest Assistant"], ["concierge", "AI Travel Concierge"], ["rooms", "Rooms & Villas"], ["activities", "Activities & Trek Advisor"],
   ["my-bookings", "My Bookings"], ["payment", "Payment Status"], ["profile", "Guest Profile"], ["help", "Guest Support"],
 ] as const;
 
@@ -47,6 +49,7 @@ function Dashboard() {
   const [selected, setSelected] = useState<string | null>(null);
   const sel = mine.find((b) => b.id === selected) ?? upcoming[0] ?? mine[0];
   const latest = mine[0];
+  const [assistSignal, setAssistSignal] = useState(0);
 
   return (
     <div>
@@ -58,6 +61,13 @@ function Dashboard() {
           ))}
         </div>
       </nav>
+      <div id="assistant" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-card p-6 shadow-card sm:flex-row sm:items-center">
+          <div><p className="eyebrow">Ask anything</p><h2 className="mt-1 text-3xl font-semibold">AI Guest Assistant</h2><p className="mt-1 text-sm text-muted-foreground">Rooms, prices, activities, dining, facilities, your booking and payment status — in 7 languages.</p></div>
+          <button className="btn btn-primary" onClick={() => setAssistSignal((k) => k + 1)}><MessageCircle className="h-4 w-4" /> Open AI Assistant</button>
+        </div>
+      </div>
+      <AssistantWidget openSignal={assistSignal} launcher={false} />
       <HubSection id="concierge" eyebrow="Plan" title="AI Travel Concierge"><ConciergeSection /></HubSection>
       <HubSection id="rooms" eyebrow="Stay" title="Rooms & Villas"><RoomsSection /></HubSection>
       <HubSection id="activities" eyebrow="Explore" title="Activities & Trek Advisor"><ActivitiesSection /></HubSection>
