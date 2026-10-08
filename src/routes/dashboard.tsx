@@ -73,7 +73,7 @@ function Dashboard() {
       <HubSection id="activities" eyebrow="Explore" title="Activities & Trek Advisor"><ActivitiesSection /></HubSection>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
         <div className="space-y-8">
-          <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-32">
+          <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-24">
             <h2 id="my-bookings-h" className="mb-4 text-3xl font-semibold">My Bookings</h2>
             {mine.length === 0 ? (
               <EmptyState title="You don't have any bookings yet.">
@@ -104,7 +104,7 @@ function Dashboard() {
             </section>
           )}
 
-          <section id="payment" aria-labelledby="payment-h" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
+          <section id="payment" aria-labelledby="payment-h" className="scroll-mt-24 rounded-2xl bg-card p-6 shadow-card">
             <h2 id="payment-h" className="text-3xl font-semibold">Payment Status</h2>
             {latest ? (
               <p className="mt-2 text-sm">Latest booking {latest.id}: <StatusBadge status={latest.payment} /></p>
@@ -121,7 +121,7 @@ function Dashboard() {
         </div>
 
         <aside className="space-y-6">
-          <section id="profile" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
+          <section id="profile" className="scroll-mt-24 rounded-2xl bg-card p-6 shadow-card">
             <h2 className="flex items-center gap-2 text-2xl font-semibold"><User className="h-5 w-5 text-primary" /> Guest Profile</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div><dt className="text-muted-foreground">Name</dt><dd>{latest?.guestName ?? demoGuest.name}</dd></div>
