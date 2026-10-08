@@ -18,10 +18,10 @@ const hubNav = [
 
 function HubSection({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-32 border-t py-12">
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-24 border-t py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="eyebrow">{eyebrow}</p>
-        <h2 id={`${id}-h`} className="mt-1 text-4xl font-semibold">{title}</h2>
+        <h2 id={`${id}-h`} className="mt-2 text-4xl font-semibold sm:text-5xl">{title}</h2>
       </div>
       <div className="mt-2">{children}</div>
     </section>
@@ -54,26 +54,26 @@ function Dashboard() {
   return (
     <div>
       <PageHeader eyebrow="Guest" title="My Dashboard" description="Plan, book and manage your stay at The Azure Ridge Sanctuary — all in one place." />
-      <nav aria-label="Dashboard sections" className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6 lg:px-8">
-          {hubNav.map(([id, label]) => (
-            <a key={id} href={`#${id}`} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">{label}</a>
+      <section aria-label="Dashboard overview" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {hubNav.map(([id, label]) => id === "assistant" ? (
+            <button key={id} onClick={() => setAssistSignal((k) => k + 1)} className="rounded-2xl bg-primary p-5 text-left text-primary-foreground shadow-card transition-transform hover:-translate-y-0.5">
+              <MessageCircle className="h-5 w-5" /><p className="mt-3 text-xl font-semibold">Ask AI Assistant</p><p className="text-xs opacity-80">Instant answers in 7 languages</p>
+            </button>
+          ) : (
+            <a key={id} href={`#${id}`} className="rounded-2xl border bg-card p-5 transition-transform hover:-translate-y-0.5 hover:shadow-card">
+              <p className="eyebrow">Go to</p><p className="mt-2 text-xl font-semibold">{label}</p>
+            </a>
           ))}
         </div>
-      </nav>
-      <div id="assistant" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-card p-6 shadow-card sm:flex-row sm:items-center">
-          <div><p className="eyebrow">Ask anything</p><h2 className="mt-1 text-3xl font-semibold">AI Guest Assistant</h2><p className="mt-1 text-sm text-muted-foreground">Rooms, prices, activities, dining, facilities, your booking and payment status — in 7 languages.</p></div>
-          <button className="btn btn-primary" onClick={() => setAssistSignal((k) => k + 1)}><MessageCircle className="h-4 w-4" /> Open AI Assistant</button>
-        </div>
-      </div>
+      </section>
       <AssistantWidget openSignal={assistSignal} launcher={false} />
       <HubSection id="concierge" eyebrow="Plan" title="AI Travel Concierge"><ConciergeSection /></HubSection>
       <HubSection id="rooms" eyebrow="Stay" title="Rooms & Villas"><RoomsSection /></HubSection>
       <HubSection id="activities" eyebrow="Explore" title="Activities & Trek Advisor"><ActivitiesSection /></HubSection>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
         <div className="space-y-8">
-          <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-32">
+          <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-24">
             <h2 id="my-bookings-h" className="mb-4 text-3xl font-semibold">My Bookings</h2>
             {mine.length === 0 ? (
               <EmptyState title="You don't have any bookings yet.">
@@ -104,7 +104,7 @@ function Dashboard() {
             </section>
           )}
 
-          <section id="payment" aria-labelledby="payment-h" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
+          <section id="payment" aria-labelledby="payment-h" className="scroll-mt-24 rounded-2xl bg-card p-6 shadow-card">
             <h2 id="payment-h" className="text-3xl font-semibold">Payment Status</h2>
             {latest ? (
               <p className="mt-2 text-sm">Latest booking {latest.id}: <StatusBadge status={latest.payment} /></p>
@@ -121,7 +121,7 @@ function Dashboard() {
         </div>
 
         <aside className="space-y-6">
-          <section id="profile" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
+          <section id="profile" className="scroll-mt-24 rounded-2xl bg-card p-6 shadow-card">
             <h2 className="flex items-center gap-2 text-2xl font-semibold"><User className="h-5 w-5 text-primary" /> Guest Profile</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div><dt className="text-muted-foreground">Name</dt><dd>{latest?.guestName ?? demoGuest.name}</dd></div>
