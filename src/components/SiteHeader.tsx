@@ -1,19 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, Mountain, X } from "lucide-react";
 import { useStore, roleLabels, type Role } from "@/lib/store";
 
 const guestNav = [
   { to: "/", label: "Home" },
-  { to: "/concierge", label: "AI Concierge" },
-  { to: "/rooms", label: "Rooms" },
-  { to: "/activities", label: "Activities" },
   { to: "/dashboard", label: "My Dashboard" },
 ] as const;
 
 export function SiteHeader() {
   const { role, setRole } = useStore();
   const [open, setOpen] = useState(false);
+
+  // No visible role switcher: guests default to "guest". Staff open the app with ?role=frontdesk|operations|guest (demo only).
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get("role");
+    if (r && r in roleLabels) setRole(r as Role);
+  }, [setRole]);
 
   const staffLink =
     role === "frontdesk" ? { to: "/front-desk" as const, label: "Front Desk Dashboard" }
@@ -46,12 +49,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-            <span>Demo role</span>
-            <select aria-label="Demo role" value={role} onChange={(e) => setRole(e.target.value as Role)} className="field !w-auto !py-1.5 !text-xs">
-              {(Object.keys(roleLabels) as Role[]).map((r) => <option key={r} value={r}>{roleLabels[r]}</option>)}
-            </select>
-          </label>
           <button className="rounded-full p-2 hover:bg-muted lg:hidden" aria-label="Toggle menu" onClick={() => setOpen(!open)}>
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -65,12 +62,6 @@ export function SiteHeader() {
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className={linkCls} activeProps={active} activeOptions={{ exact: n.to === "/" }}>{n.label}</Link>
             ))}
             {staffLink && <Link to={staffLink.to} onClick={() => setOpen(false)} className="rounded-full bg-ink px-3 py-2 text-sm font-semibold text-ink-foreground">{staffLink.label}</Link>}
-            <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
-              <span>Demo role</span>
-              <select aria-label="Demo role (mobile)" value={role} onChange={(e) => setRole(e.target.value as Role)} className="field !py-1.5 !text-xs">
-                {(Object.keys(roleLabels) as Role[]).map((r) => <option key={r} value={r}>{roleLabels[r]}</option>)}
-              </select>
-            </label>
           </div>
         </nav>
       )}
