@@ -48,16 +48,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      // Role is never restored: every visit starts as Guest unless ?role= is in the URL.
-      if (raw) { const { role: _r, ...rest } = JSON.parse(raw); setState({ ...initial(), ...rest }); }
+      if (raw) setState({ ...initial(), ...JSON.parse(raw) });
     } catch { /* ignore corrupt demo state */ }
     setLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    const { role: _r, ...rest } = state;
-    localStorage.setItem(KEY, JSON.stringify(rest));
+    if (loaded) localStorage.setItem(KEY, JSON.stringify(state));
   }, [state, loaded]);
 
   const store: Store = {

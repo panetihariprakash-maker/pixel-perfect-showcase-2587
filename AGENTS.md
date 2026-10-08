@@ -14,5 +14,3 @@
 - Staff pages gate on the demo role in the store and staff links only render for staff roles — demo-only access control until real auth exists.
 - Guest features (concierge, rooms, activities, enquiry) live in src/components/guest and render inside /dashboard; old /rooms, /concierge, /activities routes only redirect there — one implementation, no duplicate pages.
 - Demo role has no visible switcher; it defaults to guest and staff set it with ?role=frontdesk|operations — keeps staff views hidden from guests.
-- The AI Guest Assistant is one component (src/components/AssistantWidget.tsx) reused on Home and My Dashboard, calling one server function (src/lib/assistant.functions.ts) that grounds answers in src/data/resort.ts — the AI key stays server-side, and local answers are the fallback if AI fails.
-- Demo role is never saved to localStorage — every visit starts as Guest, so staff views can't leak into the guest experience.
