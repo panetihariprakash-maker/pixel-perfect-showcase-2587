@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Users } from "lucide-react";
 import { isoDay, languages, nightsBetween, resort } from "@/data/resort";
 import { Field } from "@/components/ui-kit";
 import { EMAIL_RE, PHONE_RE, useStore } from "@/lib/store";
