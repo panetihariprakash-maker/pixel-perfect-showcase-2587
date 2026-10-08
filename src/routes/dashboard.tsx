@@ -19,7 +19,7 @@ const hubNav = [
 function HubSection({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-24 border-t py-12">
-      <div className="px-4 sm:px-6 lg:px-12 xl:px-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="eyebrow">{eyebrow}</p>
         <h2 id={`${id}-h`} className="mt-2 text-4xl font-semibold sm:text-5xl">{title}</h2>
       </div>
@@ -54,7 +54,7 @@ function Dashboard() {
   return (
     <div>
       <PageHeader eyebrow="Guest" title="My Dashboard" description="Plan, book and manage your stay at The Azure Ridge Sanctuary — all in one place." />
-      <section aria-label="Dashboard overview" className="px-4 pt-10 sm:px-6 lg:px-12 xl:px-20">
+      <section aria-label="Dashboard overview" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {hubNav.map(([id, label]) => id === "assistant" ? (
             <button key={id} onClick={() => setAssistSignal((k) => k + 1)} className="rounded-2xl bg-primary p-5 text-left text-primary-foreground shadow-card transition-transform hover:-translate-y-0.5">
