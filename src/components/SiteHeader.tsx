@@ -16,7 +16,8 @@ export function SiteHeader() {
   useEffect(() => {
     const r = new URLSearchParams(window.location.search).get("role");
     if (r && r in roleLabels) setRole(r as Role);
-  }, [setRole]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const staffLink =
     role === "frontdesk" ? { to: "/front-desk" as const, label: "Front Desk Dashboard" }
