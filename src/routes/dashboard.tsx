@@ -55,7 +55,7 @@ function Dashboard() {
     <div>
       <PageHeader eyebrow="Guest" title="My Dashboard" description="Plan, book and manage your stay at The Azure Ridge Sanctuary — all in one place." />
       <section aria-label="Dashboard overview" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubNav.map(([id, label]) => id === "assistant" ? (
             <button key={id} onClick={() => setAssistSignal((k) => k + 1)} className="rounded-2xl bg-primary p-5 text-left text-primary-foreground shadow-card transition-transform hover:-translate-y-0.5">
               <MessageCircle className="h-5 w-5" /><p className="mt-3 text-xl font-semibold">Ask AI Assistant</p><p className="text-xs opacity-80">Instant answers in 7 languages</p>
