@@ -4,6 +4,27 @@ import { Headphones, Mail, Phone, User } from "lucide-react";
 import { activities, demoGuest, formatINR, getRoom, isoDay, resort, type Booking } from "@/data/resort";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
+import { ConciergeSection } from "@/components/guest/ConciergeSection";
+import { RoomsSection } from "@/components/guest/RoomsSection";
+import { ActivitiesSection } from "@/components/guest/ActivitiesSection";
+import { EnquirySection } from "@/components/guest/EnquirySection";
+
+const hubNav = [
+  ["concierge", "AI Travel Concierge"], ["rooms", "Rooms & Villas"], ["activities", "Activities & Trek Advisor"],
+  ["my-bookings", "My Bookings"], ["payment", "Payment Status"], ["profile", "Guest Profile"], ["help", "Guest Support"],
+] as const;
+
+function HubSection({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-32 border-t py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id={`${id}-h`} className="mt-1 text-4xl font-semibold">{title}</h2>
+      </div>
+      <div className="mt-2">{children}</div>
+    </section>
+  );
+}
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -29,14 +50,24 @@ function Dashboard() {
 
   return (
     <div>
-      <PageHeader eyebrow="Guest" title="My Dashboard" description="Your stays at The Azure Ridge Sanctuary in one place." />
+      <PageHeader eyebrow="Guest" title="My Dashboard" description="Plan, book and manage your stay at The Azure Ridge Sanctuary — all in one place." />
+      <nav aria-label="Dashboard sections" className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6 lg:px-8">
+          {hubNav.map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">{label}</a>
+          ))}
+        </div>
+      </nav>
+      <HubSection id="concierge" eyebrow="Plan" title="AI Travel Concierge"><ConciergeSection /></HubSection>
+      <HubSection id="rooms" eyebrow="Stay" title="Rooms & Villas"><RoomsSection /></HubSection>
+      <HubSection id="activities" eyebrow="Explore" title="Activities & Trek Advisor"><ActivitiesSection /></HubSection>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
         <div className="space-y-8">
-          <section aria-labelledby="my-bookings">
-            <h2 id="my-bookings" className="mb-4 text-3xl font-semibold">My Bookings</h2>
+          <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-32">
+            <h2 id="my-bookings-h" className="mb-4 text-3xl font-semibold">My Bookings</h2>
             {mine.length === 0 ? (
               <EmptyState title="You don't have any bookings yet.">
-                <Link to="/rooms" className="btn btn-primary">Browse Rooms</Link>
+                <a href="#rooms" className="btn btn-primary">Browse Rooms & Villas</a>
               </EmptyState>
             ) : (
               <div className="space-y-6">
@@ -63,8 +94,8 @@ function Dashboard() {
             </section>
           )}
 
-          <section aria-labelledby="payment" className="rounded-2xl bg-card p-6 shadow-card">
-            <h2 id="payment" className="text-3xl font-semibold">Payment Status</h2>
+          <section id="payment" aria-labelledby="payment-h" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
+            <h2 id="payment-h" className="text-3xl font-semibold">Payment Status</h2>
             {latest ? (
               <p className="mt-2 text-sm">Latest booking {latest.id}: <StatusBadge status={latest.payment} /></p>
             ) : <p className="mt-2 text-sm text-muted-foreground">No payments yet.</p>}
@@ -80,7 +111,7 @@ function Dashboard() {
         </div>
 
         <aside className="space-y-6">
-          <section className="rounded-2xl bg-card p-6 shadow-card">
+          <section id="profile" className="scroll-mt-32 rounded-2xl bg-card p-6 shadow-card">
             <h2 className="flex items-center gap-2 text-2xl font-semibold"><User className="h-5 w-5 text-primary" /> Guest Profile</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div><dt className="text-muted-foreground">Name</dt><dd>{latest?.guestName ?? demoGuest.name}</dd></div>
@@ -94,10 +125,11 @@ function Dashboard() {
             <p className="mt-2 text-sm opacity-80">We're here 24/7 for anything you need.</p>
             <p className="mt-3 flex items-center gap-2 text-sm"><Phone className="h-4 w-4" /> {resort.phone}</p>
             <p className="mt-1 flex items-center gap-2 text-sm"><Mail className="h-4 w-4" /> {resort.email}</p>
-            <Link to="/" hash="help" className="btn btn-accent mt-4 w-full">Send an enquiry</Link>
+            <a href="#help" className="btn btn-accent mt-4 w-full">Send an enquiry</a>
           </section>
         </aside>
       </div>
+      <div className="border-t"><EnquirySection /></div>
     </div>
   );
 }

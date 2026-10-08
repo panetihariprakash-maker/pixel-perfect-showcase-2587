@@ -12,3 +12,5 @@
 ## Architecture
 - All resort data lives in src/data/resort.ts and mutable demo state in src/lib/store.tsx (localStorage); screens must read from these, never duplicate data — Week 1 has no backend.
 - Staff pages gate on the demo role in the store and staff links only render for staff roles — demo-only access control until real auth exists.
+- Guest features (concierge, rooms, activities, enquiry) live in src/components/guest and render inside /dashboard; old /rooms, /concierge, /activities routes only redirect there — one implementation, no duplicate pages.
+- Demo role has no visible switcher; it defaults to guest and staff set it with ?role=frontdesk|operations — keeps staff views hidden from guests.
