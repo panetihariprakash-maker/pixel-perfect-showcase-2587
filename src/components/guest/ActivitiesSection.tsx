@@ -21,10 +21,11 @@ export function ActivitiesSection() {
 
   const openPlan = (a: Activity) => { setPlan(a); setPf({ date: isoDay(1), slot: a.slots[0], people: "2" }); setPerr(""); setView(null); };
   const savePlan = () => {
+    if (!plan) return;
     const n = Number(pf.people);
     if (!pf.date || pf.date < isoDay(0)) return setPerr("Choose today or a future date.");
     if (!Number.isInteger(n) || n < 1 || n > 12) return setPerr("Enter between 1 and 12 people.");
-    addPlan({ id: "PL-" + Date.now(), activityId: plan!.id, date: pf.date, slot: pf.slot, people: n });
+    addPlan({ id: "PL-" + Date.now(), activityId: plan.id, date: pf.date, slot: pf.slot, people: n });
     setPlan(null);
   };
 

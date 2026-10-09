@@ -3,19 +3,23 @@ import { Link } from "@tanstack/react-router";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { Modal, Field, StatusBadge } from "@/components/ui-kit";
 import { demoGuest, formatINR, isoDay, nightsBetween, type Booking, type Room } from "@/data/resort";
+import { useAuth } from "@/lib/auth";
 import { useStore, EMAIL_RE, PHONE_RE } from "@/lib/store";
 
 type Step = 1 | 2 | 3 | 4 | 5;
 const stepNames = ["Dates & guests", "Guest details", "Summary", "Payment", "Confirmation"];
 
 export function BookingDialog({ room, onClose, initial }: { room: Room | null; onClose: () => void; initial?: { checkIn?: string; checkOut?: string; guests?: number } }) {
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const { addBooking } = useStore();
   const [step, setStep] = useState<Step>(1);
   const [f, setF] = useState({
     checkIn: initial?.checkIn ?? isoDay(7),
     checkOut: initial?.checkOut ?? isoDay(9),
     guests: String(initial?.guests ?? Math.min(2, room?.capacity ?? 2)),
-    name: "", email: "", phone: "", requests: "",
+    name: user?.user_metadata?.full_name ?? "", email: user?.email ?? "", phone: user?.user_metadata?.mobile ?? "", requests: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<Booking | null>(null);
@@ -46,22 +50,25 @@ export function BookingDialog({ room, onClose, initial }: { room: Room | null; o
     return !Object.keys(e).length;
   };
 
-  const confirm = () => {
+  const confirm = async () => {
+    if (!user) { setSaveError("Please sign in before saving a booking."); return; }
+    setSaving(true); setSaveError("");
     const b: Booking = {
-      id: "AR-" + Math.floor(2000 + Math.random() * 8000),
-      guestId: demoGuest.id,
+      id: "AR-" + crypto.randomUUID(),
+      guestId: user.id,
       guestName: f.name.trim(), email: f.email.trim(), phone: f.phone.trim(),
       roomId: room.id, checkIn: f.checkIn, checkOut: f.checkOut, guests: Number(f.guests),
       nights, total, status: "Pending", payment: "Payment Ready/Test", createdAt: isoDay(0),
       requests: f.requests.trim() || undefined,
     };
-    addBooking(b);
-    setCreated(b);
-    setStep(5);
+    try { await addBooking(b); setCreated(b); setStep(5); }
+    catch (error) { setSaveError(error instanceof Error ? error.message : "Unable to save booking."); }
+    finally { setSaving(false); }
   };
 
   return (
     <Modal open onClose={onClose} title={step === 5 ? "Booking recorded" : `Book ${room.name}`}>
+      {saveError && <p role="alert" className="mb-4 text-sm text-destructive">{saveError}</p>}
       <ol className="mb-6 flex gap-1" aria-label="Booking steps">
         {stepNames.map((n, i) => (
           <li key={n} className="flex-1">
@@ -125,7 +132,7 @@ export function BookingDialog({ room, onClose, initial }: { room: Room | null; o
             </p>
             <p className="mt-3 text-sm">Amount due: <strong>{formatINR(total)}</strong></p>
           </div>
-          <div className="flex justify-between"><button className="btn btn-outline" onClick={() => setStep(3)}>Back</button><button className="btn btn-accent" onClick={confirm}>Save booking (test mode)</button></div>
+          <div className="flex justify-between"><button className="btn btn-outline" onClick={() => setStep(3)}>Back</button><button className="btn btn-accent" onClick={confirm} disabled={saving}>{saving ? "Saving…" : "Save booking (test mode)"}</button></div>
         </div>
       )}
 

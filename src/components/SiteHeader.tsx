@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, Mountain, X } from "lucide-react";
-import { useStore, roleLabels, type Role } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { useStore, roleLabels } from "@/lib/store";
 
 const guestNav = [
   { to: "/", label: "Home" },
@@ -9,15 +11,9 @@ const guestNav = [
 ] as const;
 
 export function SiteHeader() {
-  const { role, setRole } = useStore();
+  const { role } = useStore();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
-
-  // No visible role switcher: guests default to "guest". Staff open the app with ?role=frontdesk|operations|guest (demo only).
-  useEffect(() => {
-    const r = new URLSearchParams(window.location.search).get("role");
-    if (r && r in roleLabels) setRole(r as Role);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const staffLink =
     role === "frontdesk" ? { to: "/front-desk" as const, label: "Front Desk Dashboard" }
@@ -31,7 +27,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       {role !== "guest" && (
         <div className="bg-ink px-4 py-1.5 text-center text-xs text-ink-foreground">
-          Staff view: {roleLabels[role]} · Demo role-based access (no real backend authorization in Week 1)
+          Staff view: {roleLabels[role]} · Operational data remains in demonstration mode
         </div>
       )}
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
@@ -50,6 +46,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          {!user && <Button asChild variant="outline" className="rounded-full"><Link to="/auth">Sign In</Link></Button>}
           <button className="rounded-full p-2 hover:bg-muted lg:hidden" aria-label="Toggle menu" onClick={() => setOpen(!open)}>
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -82,7 +79,11 @@ export function SiteFooter() {
           <p>Check-in 2:00 PM · Check-out 11:00 AM</p>
           <p className="mt-1">+91 98765 43210 · stay@azureridge.example</p>
         </div>
-        <p className="text-xs opacity-60">Week 1 prototype · All data is local demo data. No real payments, emails or authentication.</p>
+        <div className="space-y-3 text-sm">
+          <Link to="/policies" className="block hover:underline">Policies & FAQs</Link>
+          <Link to="/how-to-reach" className="block hover:underline">How to Reach Us</Link>
+          <p className="text-xs opacity-60">Bookings are requests only. Live payments are not enabled.</p>
+        </div>
       </div>
     </footer>
   );
