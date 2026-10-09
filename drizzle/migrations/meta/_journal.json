@@ -8,6 +8,13 @@
       "when": 1791517137570,
       "tag": "0000_private_guest_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791517414473,
+      "tag": "0001_harden_guest_profile_trigger",
+      "breakpoints": true
     }
   ]
 }
