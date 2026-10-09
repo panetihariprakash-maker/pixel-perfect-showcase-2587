@@ -8,8 +8,11 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
+import { GuestAuthContext } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/store";
@@ -115,9 +118,26 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const [auth, setAuth] = useState<{ user: User | null; loading: boolean }>({ user: null, loading: true });
+  useEffect(() => {
+    let active = true;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED", "INITIAL_SESSION"].includes(event)) return;
+      if (active) setAuth({ user: session?.user ?? null, loading: false });
+      if (event === "SIGNED_OUT") queryClient.clear();
+      if (event !== "INITIAL_SESSION") {
+        router.invalidate();
+        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      }
+    });
+    supabase.auth.getUser().then(({ data }) => { if (active) setAuth({ user: data.user, loading: false }); });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
+      <GuestAuthContext.Provider value={auth}>
       <StoreProvider>
         <SiteHeader />
         <main className="min-h-[60vh]">
@@ -125,6 +145,7 @@ function RootComponent() {
         </main>
         <SiteFooter />
       </StoreProvider>
+      </GuestAuthContext.Provider>
     </QueryClientProvider>
   );
 }

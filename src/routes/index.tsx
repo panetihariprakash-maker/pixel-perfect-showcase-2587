@@ -9,6 +9,8 @@ import { EMAIL_RE, PHONE_RE, useStore } from "@/lib/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "The Azure Ridge Sanctuary — Hillside Resort & AI Concierge" },
       { name: "description", content: "Rooms, villas, treks and dining above the clouds. Plan your stay with our AI concierge." },
       { property: "og:title", content: "The Azure Ridge Sanctuary" },

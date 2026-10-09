@@ -1,14 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { formatINR, getRoom, isoDay, rooms, type Booking } from "@/data/resort";
 import { AccessDenied } from "@/components/AccessDenied";
 import { PageHeader, StatusBadge } from "@/components/ui-kit";
+import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/front-desk")({
+  ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw redirect({ to: "/auth" });
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "frontdesk");
+    if (!roles?.length) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Front Desk Dashboard — Azure Ridge (Staff)" },
       { name: "description", content: "Internal front desk view of arrivals, departures and reservations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Front Desk Dashboard — Azure Ridge" },
       { property: "og:description", content: "Internal front desk view of arrivals, departures and reservations." },

@@ -10,16 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as ActivitiesRouteImport } from './routes/activities'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConciergeRouteImport } from './routes/concierge'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FrontDeskRouteImport } from './routes/front-desk'
+import { Route as HowToReachRouteImport } from './routes/how-to-reach'
 import { Route as OperationsRouteImport } from './routes/operations'
+import { Route as PoliciesRouteImport } from './routes/policies'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActivitiesRoute = ActivitiesRouteImport.update({
@@ -27,14 +37,14 @@ const ActivitiesRoute = ActivitiesRouteImport.update({
   path: '/activities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConciergeRoute = ConciergeRouteImport.update({
   id: '/concierge',
   path: '/concierge',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FrontDeskRoute = FrontDeskRouteImport.update({
@@ -42,9 +52,24 @@ const FrontDeskRoute = FrontDeskRouteImport.update({
   path: '/front-desk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowToReachRoute = HowToReachRouteImport.update({
+  id: '/how-to-reach',
+  path: '/how-to-reach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OperationsRoute = OperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliciesRoute = PoliciesRouteImport.update({
+  id: '/policies',
+  path: '/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -52,73 +77,120 @@ const RoomsRoute = RoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
-  '/dashboard': typeof DashboardRoute
   '/front-desk': typeof FrontDeskRoute
+  '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/policies': typeof PoliciesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/sign-up': typeof SignUpRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
-  '/dashboard': typeof DashboardRoute
   '/front-desk': typeof FrontDeskRoute
+  '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/policies': typeof PoliciesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/sign-up': typeof SignUpRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/activities': typeof ActivitiesRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
-  '/dashboard': typeof DashboardRoute
   '/front-desk': typeof FrontDeskRoute
+  '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/policies': typeof PoliciesRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/sign-up': typeof SignUpRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/activities'
+    | '/auth'
     | '/concierge'
-    | '/dashboard'
     | '/front-desk'
+    | '/how-to-reach'
     | '/operations'
+    | '/policies'
+    | '/reset-password'
     | '/rooms'
+    | '/sign-up'
+    | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/activities'
+    | '/auth'
     | '/concierge'
-    | '/dashboard'
     | '/front-desk'
+    | '/how-to-reach'
     | '/operations'
+    | '/policies'
+    | '/reset-password'
     | '/rooms'
+    | '/sign-up'
+    | '/dashboard'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/activities'
+    | '/auth'
     | '/concierge'
-    | '/dashboard'
     | '/front-desk'
+    | '/how-to-reach'
     | '/operations'
+    | '/policies'
+    | '/reset-password'
     | '/rooms'
+    | '/sign-up'
+    | '/_authenticated/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ActivitiesRoute: typeof ActivitiesRoute
+  AuthRoute: typeof AuthRoute
   ConciergeRoute: typeof ConciergeRoute
-  DashboardRoute: typeof DashboardRoute
   FrontDeskRoute: typeof FrontDeskRoute
+  HowToReachRoute: typeof HowToReachRoute
   OperationsRoute: typeof OperationsRoute
+  PoliciesRoute: typeof PoliciesRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  SignUpRoute: typeof SignUpRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -130,11 +202,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/activities': {
       id: '/activities'
       path: '/activities'
       fullPath: '/activities'
       preLoaderRoute: typeof ActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/concierge': {
@@ -144,18 +230,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConciergeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/front-desk': {
       id: '/front-desk'
       path: '/front-desk'
       fullPath: '/front-desk'
       preLoaderRoute: typeof FrontDeskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to-reach': {
+      id: '/how-to-reach'
+      path: '/how-to-reach'
+      fullPath: '/how-to-reach'
+      preLoaderRoute: typeof HowToReachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/operations': {
@@ -165,6 +251,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/policies': {
+      id: '/policies'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof PoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rooms': {
       id: '/rooms'
       path: '/rooms'
@@ -172,17 +272,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ActivitiesRoute: ActivitiesRoute,
+  AuthRoute: AuthRoute,
   ConciergeRoute: ConciergeRoute,
-  DashboardRoute: DashboardRoute,
   FrontDeskRoute: FrontDeskRoute,
+  HowToReachRoute: HowToReachRoute,
   OperationsRoute: OperationsRoute,
+  PoliciesRoute: PoliciesRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  SignUpRoute: SignUpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,11 +5,13 @@ import {
   activities, demoGuest, diningVenues, facilities, formatINR, getRoom, languages, quickActionKeys, resort, rooms, t,
   type Language, type QuickKey,
 } from "@/data/resort";
+import { useAuth } from "@/lib/auth";
 import { useStore } from "@/lib/store";
 
 interface Msg { from: "bot" | "user"; text: string; link?: { to: "/rooms" | "/concierge" | "/activities" | "/dashboard"; label: string } }
 
 export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
+  const { user } = useAuth();
   const { bookings } = useStore();
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<Language>("English");
@@ -34,7 +36,8 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
       case "dining":
         return { from: "bot", text: diningVenues.map((d) => `• ${d.name} (${d.cuisine}) — ${d.hours}`).join("\n") };
       case "booking": {
-        const mine = bookings.filter((b) => b.guestId === demoGuest.id);
+        if (!user) return { from: "bot", text: "Sign in to view your private booking information.", link: { to: "/dashboard", label: "Sign in to My Dashboard" } };
+        const mine = bookings.filter((b) => b.guestId === user.id);
         if (!mine.length) return { from: "bot", text: "You don't have any bookings yet.", link: { to: "/rooms", label: "Browse Rooms" } };
         return { from: "bot", text: mine.map((b) => `• ${b.id}: ${getRoom(b.roomId)?.name}, ${b.checkIn} → ${b.checkOut} — ${b.status}, ${b.payment}`).join("\n"), link: { to: "/dashboard", label: "Open My Dashboard" } };
       }
