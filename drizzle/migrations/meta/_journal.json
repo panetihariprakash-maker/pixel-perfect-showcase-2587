@@ -15,6 +15,13 @@
       "when": 1791517414473,
       "tag": "0001_harden_guest_profile_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791517520302,
+      "tag": "0002_private_guest_plans_and_booking_integrity",
+      "breakpoints": true
     }
   ]
 }

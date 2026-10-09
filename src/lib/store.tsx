@@ -67,12 +67,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true;
     setPrivateBookings([]); setVerifiedRole("guest");
+    setState(s => ({ ...s, plans: [], enquiries: [] }));
     if (user) {
+      supabase.from("guest_state").select("plans,enquiries").eq("user_id", user.id).maybeSingle().then(({ data }) => { if (alive && data) setState(s => ({ ...s, plans: data.plans as unknown as PlannedActivity[], enquiries: data.enquiries as unknown as Enquiry[] })); });
       supabase.from("guest_bookings").select("details").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => { if (alive) setPrivateBookings((data ?? []).map(row => row.details as unknown as Booking)); });
       supabase.from("user_roles").select("role").eq("user_id", user.id).then(({ data }) => { if (alive) setVerifiedRole(data?.some(r => r.role === "operations") ? "operations" : data?.some(r => r.role === "frontdesk") ? "frontdesk" : "guest"); });
     }
     return () => { alive = false; };
   }, [user?.id]);
+  const persistGuestState = (next: State) => {
+    if (user) supabase.from("guest_state").upsert({ user_id: user.id, plans: next.plans as unknown as Json, enquiries: next.enquiries as unknown as Json }).then(({ error }) => { if (error) console.error("Unable to save guest plans."); });
+    return next;
+  };
   const store: Store = {
     ...state,
     role: verifiedRole,
@@ -96,9 +102,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     setReadiness: (num, readiness) => setState((s) => ({ ...s, units: s.units.map((u) => (u.number === num ? { ...u, readiness } : u)) })),
     setTaskStatus: (id, status) => setState((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)) })),
-    addEnquiry: (e) => setState((s) => ({ ...s, enquiries: [e, ...s.enquiries] })),
-    addPlan: (p) => setState((s) => ({ ...s, plans: [p, ...s.plans] })),
-    removePlan: (id) => setState((s) => ({ ...s, plans: s.plans.filter((p) => p.id !== id) })),
+    addEnquiry: (e) => setState((s) => persistGuestState({ ...s, enquiries: [e, ...s.enquiries] })),
+    addPlan: (p) => setState((s) => persistGuestState({ ...s, plans: [p, ...s.plans] })),
+    removePlan: (id) => setState((s) => persistGuestState({ ...s, plans: s.plans.filter((p) => p.id !== id) })),
   };
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;

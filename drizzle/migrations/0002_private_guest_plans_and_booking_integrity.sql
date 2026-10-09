@@ -1,0 +1,9 @@
+CREATE TABLE public.guest_state(user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE, plans jsonb NOT NULL DEFAULT '[]'::jsonb, enquiries jsonb NOT NULL DEFAULT '[]'::jsonb);
+GRANT SELECT,INSERT,UPDATE ON public.guest_state TO authenticated; GRANT ALL ON public.guest_state TO service_role;
+ALTER TABLE public.guest_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_state_read ON public.guest_state FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE POLICY own_state_create ON public.guest_state FOR INSERT TO authenticated WITH CHECK(user_id=auth.uid());
+CREATE POLICY own_state_update ON public.guest_state FOR UPDATE TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid());
+CREATE FUNCTION public.validate_guest_booking() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF new.details->>'guestId' IS DISTINCT FROM new.user_id::text THEN RAISE EXCEPTION 'Booking owner mismatch'; END IF; IF new.details->>'payment' IS DISTINCT FROM 'Payment Ready/Test' THEN RAISE EXCEPTION 'Live payment is not enabled'; END IF; IF TG_OP='INSERT' AND new.details->>'status' IS DISTINCT FROM 'Pending' THEN RAISE EXCEPTION 'Requests must be pending'; END IF; IF TG_OP='UPDATE' AND ((new.details - 'status') IS DISTINCT FROM (old.details - 'status') OR new.details->>'status' IS DISTINCT FROM 'Cancelled' OR new.user_id IS DISTINCT FROM old.user_id OR new.id IS DISTINCT FROM old.id) THEN RAISE EXCEPTION 'Only request cancellation is allowed'; END IF; RETURN new; END; $$;
+CREATE TRIGGER validate_guest_booking BEFORE INSERT OR UPDATE ON public.guest_bookings FOR EACH ROW EXECUTE FUNCTION public.validate_guest_booking();
+REVOKE EXECUTE ON FUNCTION public.validate_guest_booking() FROM PUBLIC,anon,authenticated;

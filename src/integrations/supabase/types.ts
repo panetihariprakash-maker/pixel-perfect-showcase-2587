@@ -43,6 +43,32 @@ export type Database = {
           },
         ]
       }
+      guest_state: {
+        Row: {
+          enquiries: Json
+          plans: Json
+          user_id: string
+        }
+        Insert: {
+          enquiries?: Json
+          plans?: Json
+          user_id: string
+        }
+        Update: {
+          enquiries?: Json
+          plans?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           full_name: string
