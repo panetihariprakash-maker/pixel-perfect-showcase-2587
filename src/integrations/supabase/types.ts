@@ -14,7 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      guest_bookings: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details: Json
+          id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          full_name: string
+          id: string
+          language: string
+          mobile: string
+        }
+        Insert: {
+          full_name?: string
+          id: string
+          language?: string
+          mobile?: string
+        }
+        Update: {
+          full_name?: string
+          id?: string
+          language?: string
+          mobile?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

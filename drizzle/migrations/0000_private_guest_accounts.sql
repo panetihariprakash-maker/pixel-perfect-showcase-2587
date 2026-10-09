@@ -1,0 +1,17 @@
+CREATE TABLE public.profiles (id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE, full_name text NOT NULL DEFAULT '', mobile text NOT NULL DEFAULT '', language text NOT NULL DEFAULT 'English');
+GRANT SELECT, UPDATE ON public.profiles TO authenticated; GRANT ALL ON public.profiles TO service_role;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_profile_read ON public.profiles FOR SELECT TO authenticated USING (id=auth.uid());
+CREATE POLICY own_profile_update ON public.profiles FOR UPDATE TO authenticated USING (id=auth.uid()) WITH CHECK (id=auth.uid());
+CREATE FUNCTION public.create_guest_profile() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN INSERT INTO public.profiles(id,full_name,mobile) VALUES(new.id,coalesce(new.raw_user_meta_data->>'full_name',new.raw_user_meta_data->>'name',''),coalesce(new.raw_user_meta_data->>'mobile','')); RETURN new; END; $$;
+CREATE TRIGGER create_guest_profile AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.create_guest_profile();
+CREATE TABLE public.user_roles(user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, role text NOT NULL CHECK(role IN ('frontdesk','operations')), PRIMARY KEY(user_id,role));
+GRANT SELECT ON public.user_roles TO authenticated; GRANT ALL ON public.user_roles TO service_role;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_role_read ON public.user_roles FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE TABLE public.guest_bookings(id text PRIMARY KEY, user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE, details jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT,INSERT,UPDATE ON public.guest_bookings TO authenticated; GRANT ALL ON public.guest_bookings TO service_role;
+ALTER TABLE public.guest_bookings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_booking_read ON public.guest_bookings FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE POLICY own_booking_create ON public.guest_bookings FOR INSERT TO authenticated WITH CHECK(user_id=auth.uid());
+CREATE POLICY own_booking_update ON public.guest_bookings FOR UPDATE TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid());
