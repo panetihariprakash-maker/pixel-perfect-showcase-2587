@@ -7,7 +7,9 @@ import { useStore, roleLabels } from "@/lib/store";
 
 const guestNav = [
   { to: "/", label: "Home" },
-  { to: "/dashboard", label: "My Dashboard" },
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/policies", label: "Policies & FAQs" },
+  { to: "/how-to-reach", label: "How to Reach Us" },
 ] as const;
 
 export function SiteHeader() {

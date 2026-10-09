@@ -143,7 +143,7 @@ export function BookingDialog({ room, onClose, initial }: { room: Room | null; o
           <div className="flex justify-center gap-2"><StatusBadge status={created.status} /><StatusBadge status={created.payment} /></div>
           <p className="text-sm text-muted-foreground">Your booking request is saved for demo purposes. Payment has not been taken — it is in test/ready state.</p>
           <div className="flex flex-col justify-center gap-2 sm:flex-row">
-            <Link to="/dashboard" className="btn btn-primary" onClick={onClose}>View in My Dashboard</Link>
+            <Link to="/dashboard" className="btn btn-primary" onClick={onClose}>View in Dashboard</Link>
             <button className="btn btn-outline" onClick={onClose}>Close</button>
           </div>
         </div>

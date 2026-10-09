@@ -22,7 +22,7 @@ export function DashboardSidebar({ active, children }: { active: string; childre
   useEffect(() => { if (!drawer) return; const listener = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawer(false); }; const old = document.body.style.overflow; document.body.style.overflow = 'hidden'; window.addEventListener('keydown', listener); return () => { document.body.style.overflow = old; window.removeEventListener('keydown', listener); }; }, [drawer]);
   const signOut = async () => { await queryClient.cancelQueries(); queryClient.clear(); const { error } = await supabase.auth.signOut(); if (error) { setError('Unable to sign out. Please try again.'); return; } await navigate({ to: '/auth', replace: true }); };
   return <div className={cn('dashboard-shell', compact && 'is-compact')}>
-    <div className="flex items-center justify-between border-b bg-card px-4 py-3 lg:hidden"><span className="font-display text-xl">My Dashboard</span><Button size="icon" variant="outline" aria-label="Open dashboard menu" onClick={() => setDrawer(true)}><Menu /></Button></div>
+    <div className="flex items-center justify-between border-b bg-card px-4 py-3 lg:hidden"><span className="font-display text-xl">Dashboard</span><Button size="icon" variant="outline" aria-label="Open dashboard menu" onClick={() => setDrawer(true)}><Menu /></Button></div>
     {drawer && <div className="fixed inset-0 z-40 bg-ink/60 lg:hidden" onClick={() => setDrawer(false)} />}
     <aside className={cn('dashboard-sidebar', drawer && 'drawer-open')} aria-label="Guest dashboard navigation">
       <div className="flex h-20 items-center justify-between gap-2 border-b px-4">

@@ -16,6 +16,6 @@ export const guestFaqs = [
   { question: 'Can I cancel and receive a refund?', answer: policySections[2].text },
   { question: 'Can children or extra guests stay?', answer: policySections[4].text },
   { question: 'Are pets allowed?', answer: policySections[5].text },
-  { question: 'How can I plan a trek or activity?', answer: 'Visit Activities & Trek Advisor in My Dashboard. Each experience lists its duration, difficulty and suitability. Planned slots require resort confirmation.' },
+  { question: 'How can I plan a trek or activity?', answer: 'Visit Activities & Trek Advisor in Dashboard. Each experience lists its duration, difficulty and suitability. Planned slots require resort confirmation.' },
   { question: 'Where can I get verified directions?', answer: 'Visit How to Reach Us for the current information status. The exact address, map pin and transport details still need resort confirmation.' },
 ];
