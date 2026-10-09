@@ -1,15 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { getRoom, opsAlerts, type OpsTask, type RoomReadiness, type TaskStatus } from "@/data/resort";
 import { AccessDenied } from "@/components/AccessDenied";
 import { PageHeader, StatusBadge } from "@/components/ui-kit";
+import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/operations")({
+  ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw redirect({ to: "/auth" });
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "operations");
+    if (!roles?.length) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Operations Dashboard — Azure Ridge (Staff)" },
       { name: "description", content: "Manage room readiness, housekeeping, maintenance and daily resort operations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Operations Dashboard — Azure Ridge" },
       { property: "og:description", content: "Manage room readiness, housekeeping, maintenance and daily resort operations." },
