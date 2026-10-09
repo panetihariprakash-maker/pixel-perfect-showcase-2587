@@ -31,9 +31,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "My Dashboard — The Azure Ridge Sanctuary" },
+      { title: "Dashboard — The Azure Ridge Sanctuary" },
       { name: "description", content: "Your bookings, upcoming stays, payment status and guest support." },
-      { property: "og:title", content: "My Dashboard — Azure Ridge Sanctuary" },
+      { property: "og:title", content: "Dashboard — Azure Ridge Sanctuary" },
       { property: "og:description", content: "Your bookings, upcoming stays, payment status and guest support." },
     ],
   }),

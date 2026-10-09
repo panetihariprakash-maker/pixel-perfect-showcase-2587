@@ -1,4 +1,5 @@
 # Azure Ridge update
+- [x] Add public information-page menu links, preserve footer/sidebar links, rename guest Dashboard labels, and verify navigation.
 - [x] Enable secure guest authentication and private profiles/bookings.
 - [x] Replace dashboard tab bar with collapsible sidebar; preserve guest features.
 - [x] Add policies/FAQs and travel information with honest placeholders.

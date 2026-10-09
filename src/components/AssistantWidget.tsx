@@ -36,10 +36,10 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
       case "dining":
         return { from: "bot", text: diningVenues.map((d) => `• ${d.name} (${d.cuisine}) — ${d.hours}`).join("\n") };
       case "booking": {
-        if (!user) return { from: "bot", text: "Sign in to view your private booking information.", link: { to: "/dashboard", label: "Sign in to My Dashboard" } };
+        if (!user) return { from: "bot", text: "Sign in to view your private booking information.", link: { to: "/dashboard", label: "Sign in to Dashboard" } };
         const mine = bookings.filter((b) => b.guestId === user.id);
         if (!mine.length) return { from: "bot", text: "You don't have any bookings yet.", link: { to: "/rooms", label: "Browse Rooms" } };
-        return { from: "bot", text: mine.map((b) => `• ${b.id}: ${getRoom(b.roomId)?.name}, ${b.checkIn} → ${b.checkOut} — ${b.status}, ${b.payment}`).join("\n"), link: { to: "/dashboard", label: "Open My Dashboard" } };
+        return { from: "bot", text: mine.map((b) => `• ${b.id}: ${getRoom(b.roomId)?.name}, ${b.checkIn} → ${b.checkOut} — ${b.status}, ${b.payment}`).join("\n"), link: { to: "/dashboard", label: "Open Dashboard" } };
       }
       case "support":
         return { from: "bot", text: `Guest support is available 24/7.\nPhone: ${resort.phone}\nEmail: ${resort.email}\nCheck-in ${resort.checkInTime}, check-out ${resort.checkOutTime}. You can also use the “How Can We Help You?” form below.` };
