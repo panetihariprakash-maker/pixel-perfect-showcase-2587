@@ -144,7 +144,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GuestAuthContext.Provider value={auth}>
       <StoreProvider>
-        <SiteHeader />
+        {!onDashboard && <SiteHeader />}
         <main className="min-h-[60vh]">
           <Outlet />
         </main>
