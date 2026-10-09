@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -119,6 +120,10 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // The public site header (Home / Policies & FAQs / How to Reach Us links) is
+  // shown only on public pages; the Dashboard has its own branded sidebar header.
+  const onDashboard = pathname.startsWith("/dashboard");
   const [auth, setAuth] = useState<{ user: User | null; loading: boolean }>({ user: null, loading: true });
   useEffect(() => {
     let active = true;
@@ -139,7 +144,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GuestAuthContext.Provider value={auth}>
       <StoreProvider>
-        <SiteHeader />
+        {!onDashboard && <SiteHeader />}
         <main className="min-h-[60vh]">
           <Outlet />
         </main>
