@@ -91,7 +91,7 @@ function Dashboard() {
                 {[
                   ["Reference", sel.id], ["Room / Villa", getRoom(sel.roomId)?.name], ["Check-in", sel.checkIn], ["Check-out", sel.checkOut],
                   ["Guests", sel.guests], ["Nights", sel.nights], ["Total", formatINR(sel.total)], ["Booked by", `${sel.guestName} · ${sel.email}`],
-              <div key={String(k)}><dt className="text-muted-foreground">{k}</dt><dd className="break-words font-medium">{v}</dd></div>
+                ].map(([k, v]) => <div key={String(k)}><dt className="text-muted-foreground">{k}</dt><dd className="break-words font-medium">{v}</dd></div>)}
                 {sel.requests && <div className="sm:col-span-2"><dt className="text-muted-foreground">Special requests</dt><dd>{sel.requests}</dd></div>}
               </dl>
               <div className="mt-4 flex flex-wrap items-center gap-2"><StatusBadge status={sel.status} /><StatusBadge status={sel.payment} /></div>
