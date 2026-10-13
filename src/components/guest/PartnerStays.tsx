@@ -21,7 +21,7 @@ export function PartnerStays() {
           const from = l.rooms.length ? Math.min(...l.rooms.map((r) => effectivePrice(r))) : null;
           return (
             <article key={l.id} className="overflow-hidden rounded-2xl bg-card shadow-card">
-              {covers.data?.[l.photos[0]] ? <img src={covers.data[l.photos[0]]} alt={l.name} loading="lazy" className="aspect-[16/10] w-full object-cover" /> : <div className="aspect-[16/10] w-full bg-muted" />}
+              {covers.data?.[l.photos[0]] ? <img src={covers.data[l.photos[0]] ?? undefined} alt={l.name} loading="lazy" className="aspect-[16/10] w-full object-cover" /> : <div className="aspect-[16/10] w-full bg-muted" />}
               <div className="p-6">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">{l.kind}</p>
                 <h3 className="text-2xl font-semibold">{l.name}</h3>
