@@ -85,6 +85,7 @@ export function SiteFooter() {
         <div className="space-y-3 text-sm">
           <Link to="/policies" className="block hover:underline">Policies & FAQs</Link>
           <Link to="/how-to-reach" className="block hover:underline">How to Reach Us</Link>
+          <Link to="/owner" className="block hover:underline">List your property</Link>
           <p className="text-xs opacity-60">Bookings are requests only. Live payments are not enabled.</p>
         </div>
       </div>
