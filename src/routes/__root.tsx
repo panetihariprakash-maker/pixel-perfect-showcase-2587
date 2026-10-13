@@ -123,7 +123,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // The public site header (Home / Policies & FAQs / How to Reach Us links) is
   // shown only on public pages; the Dashboard has its own branded sidebar header.
-  const onDashboard = pathname.startsWith("/dashboard");
+  const onDashboard = ["/dashboard", "/owner", "/admin"].some((p) => pathname.startsWith(p));
   const [auth, setAuth] = useState<{ user: User | null; loading: boolean }>({ user: null, loading: true });
   useEffect(() => {
     let active = true;
