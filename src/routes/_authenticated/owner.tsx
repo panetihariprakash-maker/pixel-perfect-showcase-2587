@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatINR } from "@/data/resort";
 import { StatusBadge } from "@/components/ui-kit";
-import { occupancyPercent, useOwnerData } from "@/lib/owner";
+import { occupancyPercent, useOwnerData, type BusinessOwner } from "@/lib/owner";
 import { ErrorNote, PortalShell, SectionTitle, StatCard } from "@/components/owner/PortalShell";
 import { PropertiesSection, RoomsManager } from "@/components/owner/ListingsSections";
 import { GuestsSection, ReservationsSection } from "@/components/owner/BookingsSections";
@@ -41,7 +41,7 @@ function OwnerPage() {
   return <ApprovedOwner uid={uid} owner={o} />;
 }
 
-function ApprovedOwner({ uid, owner }: { uid: string; owner: NonNullable<ReturnType<typeof useQuery>["data"]> & import("@/lib/owner").BusinessOwner }) {
+function ApprovedOwner({ uid, owner }: { uid: string; owner: BusinessOwner }) {
   const [active, setActive] = useState("overview");
   useEffect(() => { const h = window.location.hash.slice(1); if (sections.includes(h)) setActive(h); }, []);
   const select = (id: string) => { setActive(id); history.replaceState(null, "", `#${id}`); window.scrollTo({ top: 0 }); };
