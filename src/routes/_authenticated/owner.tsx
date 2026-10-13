@@ -46,7 +46,7 @@ function ApprovedOwner({ uid, owner }: { uid: string; owner: BusinessOwner }) {
   useEffect(() => { const h = window.location.hash.slice(1); if (sections.includes(h)) setActive(h); }, []);
   const select = (id: string) => { setActive(id); history.replaceState(null, "", `#${id}`); window.scrollTo({ top: 0 }); };
   const { properties, rooms, reservations, notifications } = useOwnerData(uid, true);
-  const announcement = useQuery({ queryKey: ["platform-announcement"], queryFn: async () => (await supabase.from("platform_settings").select("announcement").eq("id", 1).maybeSingle()).data?.announcement ?? "" });
+  const announcement = useQuery({ queryKey: ["platform-announcement"], queryFn: async () => (await supabase.rpc("platform_announcement")).data ?? "" });
   const P = properties.data ?? [], R = rooms.data ?? [], B = reservations.data ?? [], N = notifications.data ?? [];
   const unread = N.filter((n) => !n.read).length;
   const items = [
