@@ -17,3 +17,5 @@
 - Operational sample data stays in the local demo store, separate from private guest reservations, until resort operations are connected.
 - Dashboard navigation selects guest sections through URL hashes in a shared collapsible sidebar; informational pages remain public and separately shareable.
 - Root owns the single auth-state subscriber and supplies session state to guest UI; protected routes validate through the authenticated layout.
+- Business owner portal (/owner) and Super Admin (/admin) live under _authenticated; owner data access depends on RLS via is_approved_owner(), and status changes are enforced by DB triggers so only superadmins can approve, reject or suspend.
+- Listing photos are stored in the private listing-photos bucket under `<owner uid>/` and shown through signed URLs.
