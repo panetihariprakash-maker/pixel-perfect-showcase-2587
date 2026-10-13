@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as ActivitiesRouteImport } from './routes/activities'
+import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConciergeRouteImport } from './routes/concierge'
 import { Route as FrontDeskRouteImport } from './routes/front-desk'
 import { Route as HowToReachRouteImport } from './routes/how-to-reach'
 import { Route as OperationsRouteImport } from './routes/operations'
+import { Route as OwnerLoginRouteImport } from './routes/owner-login'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RoomsRouteImport } from './routes/rooms'
@@ -37,6 +39,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const ActivitiesRoute = ActivitiesRouteImport.update({
   id: '/activities',
   path: '/activities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin-login',
+  path: '/admin-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -62,6 +69,11 @@ const HowToReachRoute = HowToReachRouteImport.update({
 const OperationsRoute = OperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/owner-login',
+  path: '/owner-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PoliciesRoute = PoliciesRouteImport.update({
@@ -103,11 +115,13 @@ const AuthenticatedOwnerRoute = AuthenticatedOwnerRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/front-desk': typeof FrontDeskRoute
   '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/owner-login': typeof OwnerLoginRoute
   '/policies': typeof PoliciesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -119,11 +133,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/front-desk': typeof FrontDeskRoute
   '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/owner-login': typeof OwnerLoginRoute
   '/policies': typeof PoliciesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -137,11 +153,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/activities': typeof ActivitiesRoute
+  '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/front-desk': typeof FrontDeskRoute
   '/how-to-reach': typeof HowToReachRoute
   '/operations': typeof OperationsRoute
+  '/owner-login': typeof OwnerLoginRoute
   '/policies': typeof PoliciesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -155,11 +173,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activities'
+    | '/admin-login'
     | '/auth'
     | '/concierge'
     | '/front-desk'
     | '/how-to-reach'
     | '/operations'
+    | '/owner-login'
     | '/policies'
     | '/reset-password'
     | '/rooms'
@@ -171,11 +191,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activities'
+    | '/admin-login'
     | '/auth'
     | '/concierge'
     | '/front-desk'
     | '/how-to-reach'
     | '/operations'
+    | '/owner-login'
     | '/policies'
     | '/reset-password'
     | '/rooms'
@@ -188,11 +210,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/activities'
+    | '/admin-login'
     | '/auth'
     | '/concierge'
     | '/front-desk'
     | '/how-to-reach'
     | '/operations'
+    | '/owner-login'
     | '/policies'
     | '/reset-password'
     | '/rooms'
@@ -206,11 +230,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ActivitiesRoute: typeof ActivitiesRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
   ConciergeRoute: typeof ConciergeRoute
   FrontDeskRoute: typeof FrontDeskRoute
   HowToReachRoute: typeof HowToReachRoute
   OperationsRoute: typeof OperationsRoute
+  OwnerLoginRoute: typeof OwnerLoginRoute
   PoliciesRoute: typeof PoliciesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
@@ -238,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/activities'
       fullPath: '/activities'
       preLoaderRoute: typeof ActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-login': {
+      id: '/admin-login'
+      path: '/admin-login'
+      fullPath: '/admin-login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -273,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/operations'
       fullPath: '/operations'
       preLoaderRoute: typeof OperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner-login': {
+      id: '/owner-login'
+      path: '/owner-login'
+      fullPath: '/owner-login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/policies': {
@@ -346,11 +386,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ActivitiesRoute: ActivitiesRoute,
+  AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
   ConciergeRoute: ConciergeRoute,
   FrontDeskRoute: FrontDeskRoute,
   HowToReachRoute: HowToReachRoute,
   OperationsRoute: OperationsRoute,
+  OwnerLoginRoute: OwnerLoginRoute,
   PoliciesRoute: PoliciesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,

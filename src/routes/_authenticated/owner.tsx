@@ -46,6 +46,7 @@ function ApprovedOwner({ uid, owner }: { uid: string; owner: BusinessOwner }) {
   useEffect(() => { const h = window.location.hash.slice(1); if (sections.includes(h)) setActive(h); }, []);
   const select = (id: string) => { setActive(id); history.replaceState(null, "", `#${id}`); window.scrollTo({ top: 0 }); };
   const { properties, rooms, reservations, notifications } = useOwnerData(uid, true);
+  const announcement = useQuery({ queryKey: ["platform-announcement"], queryFn: async () => (await supabase.from("platform_settings").select("announcement").eq("id", 1).maybeSingle()).data?.announcement ?? "" });
   const P = properties.data ?? [], R = rooms.data ?? [], B = reservations.data ?? [], N = notifications.data ?? [];
   const unread = N.filter((n) => !n.read).length;
   const items = [
@@ -60,6 +61,7 @@ function ApprovedOwner({ uid, owner }: { uid: string; owner: BusinessOwner }) {
   return (
     <PortalShell title="Owner Portal" items={items} active={active} onSelect={select}>
       <div className="px-4 py-8 sm:px-8">
+        {announcement.data && <p className="mb-4 rounded-xl bg-accent/20 p-3 text-sm" role="status">{announcement.data}</p>}
         {err && <div className="mb-4"><ErrorNote error={err} /></div>}
         {loading ? <p className="text-muted-foreground">Loading your business…</p> : <>
           {active === "overview" && (
@@ -78,8 +80,8 @@ function ApprovedOwner({ uid, owner }: { uid: string; owner: BusinessOwner }) {
               </div>
             </section>
           )}
-          {active === "properties" && <PropertiesSection userId={uid} properties={P} rooms={R} />}
-          {active === "rooms" && <RoomsManager userId={uid} properties={P} rooms={R} />}
+          {active === "properties" && <PropertiesSection userId={uid} properties={P} rooms={R} perms={owner} />}
+          {active === "rooms" && <RoomsManager userId={uid} properties={P} rooms={R} perms={owner} />}
           {active === "reservations" && <ReservationsSection userId={uid} properties={P} rooms={R} reservations={B} />}
           {active === "guests" && <GuestsSection reservations={B} properties={P} />}
           {active === "profile" && <BusinessProfileSection userId={uid} owner={owner} />}
