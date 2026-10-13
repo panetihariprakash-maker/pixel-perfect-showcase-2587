@@ -14,12 +14,49 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity: string
+          entity_id: string
+          id: string
+          summary: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity: string
+          entity_id?: string
+          id?: string
+          summary?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity?: string
+          entity_id?: string
+          id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       business_owners: {
         Row: {
           about: string
           address: string
           admin_note: string
           business_name: string
+          can_add: boolean
+          can_edit: boolean
+          can_publish: boolean
+          can_remove: boolean
           contact_email: string
           contact_name: string
           contact_phone: string
@@ -34,6 +71,10 @@ export type Database = {
           address?: string
           admin_note?: string
           business_name: string
+          can_add?: boolean
+          can_edit?: boolean
+          can_publish?: boolean
+          can_remove?: boolean
           contact_email?: string
           contact_name?: string
           contact_phone?: string
@@ -48,6 +89,10 @@ export type Database = {
           address?: string
           admin_note?: string
           business_name?: string
+          can_add?: boolean
+          can_edit?: boolean
+          can_publish?: boolean
+          can_remove?: boolean
           contact_email?: string
           contact_name?: string
           contact_phone?: string
@@ -361,6 +406,39 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          allow_owner_applications: boolean
+          announcement: string
+          id: number
+          notify_owners: boolean
+          platform_name: string
+          support_email: string
+          support_phone: string
+          updated_at: string
+        }
+        Insert: {
+          allow_owner_applications?: boolean
+          announcement?: string
+          id?: number
+          notify_owners?: boolean
+          platform_name?: string
+          support_email?: string
+          support_phone?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_owner_applications?: boolean
+          announcement?: string
+          id?: number
+          notify_owners?: boolean
+          platform_name?: string
+          support_email?: string
+          support_phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           full_name: string
@@ -404,6 +482,10 @@ export type Database = {
     Functions: {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_approved_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_privileged: { Args: never; Returns: boolean }
+      is_public_photo: { Args: { _path: string }; Returns: boolean }
+      owner_can: { Args: { _perm: string; _user_id: string }; Returns: boolean }
+      public_listings: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

@@ -4,7 +4,9 @@ import { Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatINR } from "@/data/resort";
 import { EmptyState, Modal, StatusBadge } from "@/components/ui-kit";
-import { effectivePrice, splitList, type OwnerRoom, type Property } from "@/lib/owner";
+import { effectivePrice, splitList, type BusinessOwner, type OwnerRoom, type Property } from "@/lib/owner";
+
+export type Perms = Pick<BusinessOwner, "can_add" | "can_edit" | "can_publish" | "can_remove">;
 import { PhotoManager, PhotoStrip } from "./PhotoManager";
 import { ErrorNote, SectionTitle } from "./PortalShell";
 
@@ -14,7 +16,7 @@ function SearchBar({ value, onChange, placeholder, children }: { value: string; 
   return <div className="mb-4 flex flex-col gap-2 sm:flex-row"><input type="search" className="field" placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} aria-label={placeholder} />{children}</div>;
 }
 
-export function PropertiesSection({ userId, properties, rooms }: { userId: string; properties: Property[]; rooms: OwnerRoom[] }) {
+export function PropertiesSection({ userId, properties, rooms, perms }: { userId: string; properties: Property[]; rooms: OwnerRoom[]; perms: Perms }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
@@ -36,7 +38,7 @@ export function PropertiesSection({ userId, properties, rooms }: { userId: strin
 
   return (
     <section>
-      <SectionTitle title="Properties" description="Resorts, hotels and villas. Submit a listing for Super Admin approval when it's ready." action={<button className="btn btn-primary" onClick={() => setEditing({ kind: "Resort", amenities: [], photos: [], check_in: "14:00", check_out: "11:00" })}><Plus className="h-4 w-4" /> Add property</button>} />
+      <SectionTitle title="Properties" description="Resorts, hotels and villas. Submit a listing for Super Admin approval when it's ready." action={perms.can_add && <button className="btn btn-primary" onClick={() => setEditing({ kind: "Resort", amenities: [], photos: [], check_in: "14:00", check_out: "11:00" })}><Plus className="h-4 w-4" /> Add property</button>} />
       <SearchBar value={q} onChange={setQ} placeholder="Search properties">
         <select className="field sm:w-56" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">{["All", "Draft", "Pending Approval", "Approved", "Rejected", "Suspended"].map((s) => <option key={s}>{s}</option>)}</select>
       </SearchBar>
@@ -51,20 +53,20 @@ export function PropertiesSection({ userId, properties, rooms }: { userId: strin
                 <td className="p-3">{p.kind}</td><td className="p-3">{p.location || "—"}</td><td className="p-3">{rooms.filter((r) => r.property_id === p.id).length}</td>
                 <td className="p-3"><StatusBadge status={p.status} />{p.admin_note && <p className="mt-1 max-w-48 text-xs text-muted-foreground">Note: {p.admin_note}</p>}</td>
                 <td className="p-3"><div className="flex justify-end gap-1">
-                  {(p.status === "Draft" || p.status === "Rejected") && <button className="btn btn-outline !px-3 !py-1.5 text-xs" onClick={() => submit(p)}><Send className="h-3.5 w-3.5" /> Submit</button>}
-                  {p.status !== "Suspended" && <button className="rounded-full p-2 hover:bg-muted" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></button>}
-                  <button className="rounded-full p-2 text-destructive hover:bg-muted" aria-label={`Delete ${p.name}`} onClick={() => remove(p)}><Trash2 className="h-4 w-4" /></button>
+                  {perms.can_publish && (p.status === "Draft" || p.status === "Rejected") && <button className="btn btn-outline !px-3 !py-1.5 text-xs" onClick={() => submit(p)}><Send className="h-3.5 w-3.5" /> Submit</button>}
+                  {perms.can_edit && p.status !== "Suspended" && <button className="rounded-full p-2 hover:bg-muted" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></button>}
+                  {perms.can_remove && <button className="rounded-full p-2 text-destructive hover:bg-muted" aria-label={`Delete ${p.name}`} onClick={() => remove(p)}><Trash2 className="h-4 w-4" /></button>}
                 </div></td>
               </tr>))}</tbody>
           </table>
         </div>
       )}
-      {editing && <PropertyForm userId={userId} initial={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />}
+      {editing && <PropertyForm userId={userId} canPublish={perms.can_publish} initial={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />}
     </section>
   );
 }
 
-function PropertyForm({ userId, initial, onClose, onSaved }: { userId: string; initial: Partial<Property>; onClose: () => void; onSaved: () => void }) {
+function PropertyForm({ userId, canPublish, initial, onClose, onSaved }: { userId: string; canPublish: boolean; initial: Partial<Property>; onClose: () => void; onSaved: () => void }) {
   const [f, setF] = useState({ name: initial.name ?? "", kind: initial.kind ?? "Resort", description: initial.description ?? "", location: initial.location ?? "", amenities: (initial.amenities ?? []).join(", "), check_in: initial.check_in ?? "14:00", check_out: initial.check_out ?? "11:00", photos: initial.photos ?? [] });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -95,13 +97,13 @@ function PropertyForm({ userId, initial, onClose, onSaved }: { userId: string; i
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button className="btn btn-outline" onClick={onClose}>Cancel</button>
         <button className="btn btn-outline" disabled={saving} onClick={() => save(false)}>Save as draft</button>
-        <button className="btn btn-primary" disabled={saving} onClick={() => save(true)}>Save & submit for approval</button>
+        {canPublish && <button className="btn btn-primary" disabled={saving} onClick={() => save(true)}>Save & submit for approval</button>}
       </div>
     </Modal>
   );
 }
 
-export function RoomsManager({ userId, properties, rooms }: { userId: string; properties: Property[]; rooms: OwnerRoom[] }) {
+export function RoomsManager({ userId, properties, rooms, perms }: { userId: string; properties: Property[]; rooms: OwnerRoom[]; perms: Perms }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [prop, setProp] = useState("All");
@@ -115,7 +117,7 @@ export function RoomsManager({ userId, properties, rooms }: { userId: string; pr
 
   return (
     <section>
-      <SectionTitle title="Rooms & Pricing" description="Rooms, suites, cottages and villas with nightly, seasonal and discounted prices." action={<button className="btn btn-primary" disabled={!properties.length} onClick={() => setEditing({ property_id: properties[0]?.id, room_type: "Room", capacity: 2, price: 0, discount_pct: 0, units: 1, available: true, facilities: [], photos: [] })}><Plus className="h-4 w-4" /> Add room</button>} />
+      <SectionTitle title="Rooms & Pricing" description="Rooms, suites, cottages and villas with nightly, seasonal and discounted prices." action={perms.can_add && <button className="btn btn-primary" disabled={!properties.length} onClick={() => setEditing({ property_id: properties[0]?.id, room_type: "Room", capacity: 2, price: 0, discount_pct: 0, units: 1, available: true, facilities: [], photos: [] })}><Plus className="h-4 w-4" /> Add room</button>} />
       {!properties.length && <p className="mb-4 text-sm text-muted-foreground">Add a property first, then add its rooms.</p>}
       <SearchBar value={q} onChange={setQ} placeholder="Search rooms">
         <select className="field sm:w-56" value={prop} onChange={(e) => setProp(e.target.value)} aria-label="Filter by property"><option value="All">All properties</option>{properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
@@ -131,8 +133,8 @@ export function RoomsManager({ userId, properties, rooms }: { userId: string; pr
                 <td className="p-3">{names[r.property_id]}</td><td className="p-3">{r.capacity}</td><td className="p-3">{formatINR(r.price)}</td>
                 <td className="p-3 font-semibold text-primary">{formatINR(effectivePrice(r))}{r.discount_pct > 0 && <span className="ml-1 text-xs text-success">−{r.discount_pct}%</span>}</td>
                 <td className="p-3">{r.units}</td>
-                <td className="p-3"><button onClick={() => toggle(r)} className="rounded-full border px-3 py-1 text-xs font-semibold" aria-label={`Toggle availability for ${r.name}`}>{r.available ? "Open" : "Closed"}</button></td>
-                <td className="p-3"><div className="flex justify-end gap-1"><button className="rounded-full p-2 hover:bg-muted" aria-label={`Edit ${r.name}`} onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></button><button className="rounded-full p-2 text-destructive hover:bg-muted" aria-label={`Delete ${r.name}`} onClick={() => remove(r)}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="p-3"><button onClick={() => perms.can_edit && toggle(r)} disabled={!perms.can_edit} className="rounded-full border px-3 py-1 text-xs font-semibold" aria-label={`Toggle availability for ${r.name}`}>{r.available ? "Open" : "Closed"}</button></td>
+                <td className="p-3"><div className="flex justify-end gap-1">{perms.can_edit && <button className="rounded-full p-2 hover:bg-muted" aria-label={`Edit ${r.name}`} onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></button>}{perms.can_remove && <button className="rounded-full p-2 text-destructive hover:bg-muted" aria-label={`Delete ${r.name}`} onClick={() => remove(r)}><Trash2 className="h-4 w-4" /></button>}</div></td>
               </tr>))}</tbody>
           </table>
         </div>
