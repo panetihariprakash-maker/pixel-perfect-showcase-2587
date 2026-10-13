@@ -13,21 +13,29 @@ const budgets = [
 ];
 
 export function RoomsSection() {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("default");
   const [guests, setGuests] = useState("any");
   const [budget, setBudget] = useState(0);
   const [type, setType] = useState("All");
   const [detail, setDetail] = useState<Room | null>(null);
   const [book, setBook] = useState<Room | null>(null);
 
-  const list = useMemo(
-    () => rooms.filter((r) => (guests === "any" || r.capacity >= Number(guests)) && r.price <= budgets[budget].max && (type === "All" || r.type === type)),
-    [guests, budget, type],
-  );
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = rooms.filter((r) => (!q || r.name.toLowerCase().includes(q)) && (guests === "any" || r.capacity >= Number(guests)) && r.price <= budgets[budget].max && (type === "All" || r.type === type));
+    if (sort === "price-asc") return [...filtered].sort((a, b) => a.price - b.price);
+    if (sort === "price-desc") return [...filtered].sort((a, b) => b.price - a.price);
+    return filtered;
+  }, [query, sort, guests, budget, type]);
 
   return (
     <div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 grid gap-3 rounded-2xl bg-card p-4 shadow-card sm:grid-cols-4">
+        <div className="mb-8 grid gap-3 rounded-2xl bg-card p-4 shadow-card sm:grid-cols-2 lg:grid-cols-6">
+          <label className="text-sm font-medium lg:col-span-2">Search
+            <input className="field mt-1" type="search" placeholder="Room or villa name" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </label>
           <label className="text-sm font-medium">Number of Guests
             <select className="field mt-1" value={guests} onChange={(e) => setGuests(e.target.value)}>
               <option value="any">Any</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}+</option>)}
@@ -43,7 +51,12 @@ export function RoomsSection() {
               {["All", "Room", "Suite", "Villa", "Cottage"].map((t) => <option key={t}>{t}</option>)}
             </select>
           </label>
-          <div className="flex items-end"><button className="btn btn-outline w-full" onClick={() => { setGuests("any"); setBudget(0); setType("All"); }}>Reset filters</button></div>
+          <label className="text-sm font-medium">Sort
+            <select className="field mt-1" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="default">Featured</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option>
+            </select>
+          </label>
+          <div className="flex items-end sm:col-span-2 lg:col-span-6"><button className="btn btn-outline w-full sm:w-auto" onClick={() => { setQuery(""); setSort("default"); setGuests("any"); setBudget(0); setType("All"); }}>Reset filters</button></div>
         </div>
 
         <p className="mb-4 text-sm text-muted-foreground">{list.length} stay{list.length !== 1 && "s"} found</p>
