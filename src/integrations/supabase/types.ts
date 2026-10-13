@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_owners: {
+        Row: {
+          about: string
+          address: string
+          admin_note: string
+          business_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          notify_bookings: boolean
+          notify_email: boolean
+          status: string
+          user_id: string
+        }
+        Insert: {
+          about?: string
+          address?: string
+          admin_note?: string
+          business_name: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          notify_bookings?: boolean
+          notify_email?: boolean
+          status?: string
+          user_id: string
+        }
+        Update: {
+          about?: string
+          address?: string
+          admin_note?: string
+          business_name?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          notify_bookings?: boolean
+          notify_email?: boolean
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_owners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_bookings: {
         Row: {
           created_at: string
@@ -69,6 +122,245 @@ export type Database = {
           },
         ]
       }
+      owner_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          owner_id: string
+          read: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          owner_id: string
+          read?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          owner_id?: string
+          read?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_notifications_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "business_owners"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      owner_properties: {
+        Row: {
+          admin_note: string
+          amenities: string[]
+          check_in: string
+          check_out: string
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          location: string
+          name: string
+          owner_id: string
+          photos: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string
+          amenities?: string[]
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          location?: string
+          name: string
+          owner_id: string
+          photos?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string
+          amenities?: string[]
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          location?: string
+          name?: string
+          owner_id?: string
+          photos?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "business_owners"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      owner_reservations: {
+        Row: {
+          amount: number
+          check_in: string
+          check_out: string
+          created_at: string
+          guest_email: string
+          guest_name: string
+          guest_phone: string
+          guests: number
+          id: string
+          notes: string
+          owner_id: string
+          property_id: string
+          room_id: string | null
+          status: string
+        }
+        Insert: {
+          amount?: number
+          check_in: string
+          check_out: string
+          created_at?: string
+          guest_email?: string
+          guest_name: string
+          guest_phone?: string
+          guests?: number
+          id?: string
+          notes?: string
+          owner_id: string
+          property_id: string
+          room_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          guest_email?: string
+          guest_name?: string
+          guest_phone?: string
+          guests?: number
+          id?: string
+          notes?: string
+          owner_id?: string
+          property_id?: string
+          room_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_reservations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "business_owners"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "owner_reservations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "owner_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_rooms: {
+        Row: {
+          available: boolean
+          capacity: number
+          created_at: string
+          description: string
+          discount_pct: number
+          facilities: string[]
+          id: string
+          name: string
+          owner_id: string
+          photos: string[]
+          price: number
+          property_id: string
+          room_type: string
+          season_end: string | null
+          season_start: string | null
+          seasonal_price: number | null
+          units: number
+        }
+        Insert: {
+          available?: boolean
+          capacity?: number
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          facilities?: string[]
+          id?: string
+          name: string
+          owner_id: string
+          photos?: string[]
+          price?: number
+          property_id: string
+          room_type?: string
+          season_end?: string | null
+          season_start?: string | null
+          seasonal_price?: number | null
+          units?: number
+        }
+        Update: {
+          available?: boolean
+          capacity?: number
+          created_at?: string
+          description?: string
+          discount_pct?: number
+          facilities?: string[]
+          id?: string
+          name?: string
+          owner_id?: string
+          photos?: string[]
+          price?: number
+          property_id?: string
+          room_type?: string
+          season_end?: string | null
+          season_start?: string | null
+          seasonal_price?: number | null
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_rooms_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "business_owners"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "owner_rooms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           full_name: string
@@ -110,7 +402,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_approved_owner: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
