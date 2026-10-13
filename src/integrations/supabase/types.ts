@@ -460,6 +460,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id: string
+          name?: string
+          phone?: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           role: string
@@ -487,6 +525,7 @@ export type Database = {
       owner_can: { Args: { _perm: string; _user_id: string }; Returns: boolean }
       platform_announcement: { Args: never; Returns: string }
       public_listings: { Args: never; Returns: Json }
+      user_role_label: { Args: { _uid: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
