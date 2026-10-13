@@ -19,3 +19,7 @@
 - Root owns the single auth-state subscriber and supplies session state to guest UI; protected routes validate through the authenticated layout.
 - Business owner portal (/owner) and Super Admin (/admin) live under _authenticated; owner data access depends on RLS via is_approved_owner(), and status changes are enforced by DB triggers so only superadmins can approve, reject or suspend.
 - Listing photos are stored in the private listing-photos bucket under `<owner uid>/` and shown through signed URLs.
+- Owner listing permissions (can_add/edit/publish/remove) live on business_owners and are enforced by RLS via owner_can() and the listing trigger; the UI only mirrors them.
+- Privileged admin actions needing auth.users (invites, user list, role changes) go through src/lib/admin.functions.ts, which verifies the superadmin role before loading the service client.
+- The public catalogue reads partner listings only through the public_listings() SQL function, which returns approved listings from approved owners with safe columns; photo access follows is_public_photo().
+- Audit history is written by database triggers into admin_audit_log, so every change is captured regardless of which client made it.
