@@ -5,6 +5,7 @@ import { Mountain, PanelLeftClose, PanelLeftOpen, Menu, X, LayoutDashboard, Spar
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { AccountMenu } from '@/components/AccountMenu';
 
 export const dashboardItems = [
   ['overview', 'Overview', LayoutDashboard], ['assistant', 'AI Guest Assistant', Sparkles], ['concierge', 'AI Travel Concierge', Compass],
@@ -39,6 +40,18 @@ export function DashboardSidebar({ active, children }: { active: string; childre
       </nav>
       <div className="border-t p-3"><Button variant="ghost" className="sidebar-link" aria-label="Sign Out" title="Sign Out" onClick={signOut}><LogOut /><span className="sidebar-label">Sign Out</span></Button>{error && <p role="alert" className="text-xs text-destructive">{error}</p>}</div>
     </aside>
-    <div className="dashboard-main min-w-0">{children}</div>
+    <div className="dashboard-main min-w-0">
+      <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+        <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex min-w-0 items-center gap-2" title="Azure Ridge Sanctuary">
+            <Mountain className="h-6 w-6 shrink-0 text-primary" />
+            <span className="hidden truncate font-display text-lg font-semibold sm:block">Azure Ridge Sanctuary</span>
+            <span className="truncate font-display text-lg font-semibold sm:hidden">Dashboard</span>
+          </Link>
+          <AccountMenu />
+        </div>
+      </div>
+      {children}
+    </div>
   </div>;
 }
