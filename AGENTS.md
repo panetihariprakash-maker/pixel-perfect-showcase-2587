@@ -23,3 +23,4 @@
 - Privileged admin actions needing auth.users (invites, user list, role changes) go through src/lib/admin.functions.ts, which verifies the superadmin role before loading the service client.
 - The public catalogue reads partner listings only through the public_listings() SQL function, which returns approved listings from approved owners with safe columns; photo access follows is_public_photo().
 - Audit history is written by database triggers into admin_audit_log, so every change is captured regardless of which client made it.
+- public."user" is a trigger-maintained account summary (synced from profiles, auth email, user_roles); its role column is display-only and never used for authorization.
