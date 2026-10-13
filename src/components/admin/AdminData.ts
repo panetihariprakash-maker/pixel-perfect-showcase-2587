@@ -10,7 +10,7 @@ export function useAdminData() {
   const rooms = useQuery(q("rooms", () => supabase.from("owner_rooms").select("*").order("created_at", { ascending: false })));
   const bookings = useQuery(q("bookings", () => supabase.from("owner_reservations").select("*").order("check_in", { ascending: false })));
   const audit = useQuery(q("audit", () => supabase.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(300)));
-  const settings = useQuery(q("settings", () => supabase.from("platform_settings").select("*").eq("id", 1).single()));
+  const settings = useQuery({ queryKey: ["admin", "settings"], queryFn: async () => { const { data, error } = await supabase.from("platform_settings").select("*").eq("id", 1).single(); if (error) throw error; return data; } });
   return { owners, listings, rooms, bookings, audit, settings };
 }
 
