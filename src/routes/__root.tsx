@@ -96,6 +96,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" },
     ],
+    scripts: [
+      {
+        // After a new publish, old open tabs may request page files that no longer exist.
+        // Reload once to pick up the latest version instead of showing a blank screen.
+        children: `(function(){var K="__chunk_reload";function r(){try{var t=Number(sessionStorage.getItem(K)||0);if(Date.now()-t<10000)return;sessionStorage.setItem(K,String(Date.now()));}catch(e){}location.reload();}window.addEventListener("vite:preloadError",function(e){e.preventDefault&&e.preventDefault();r();});window.addEventListener("unhandledrejection",function(e){var m=String(e&&e.reason&&(e.reason.message||e.reason)||"");if(/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(m))r();});window.addEventListener("error",function(e){var m=String(e&&e.message||"");if(/Failed to fetch dynamically imported module|Importing a module script failed/i.test(m))r();});})();`,
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
