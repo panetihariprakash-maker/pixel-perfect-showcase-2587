@@ -1,46 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth";
+import { usePublicListings, type PublicListing, type PublicRoom } from "@/lib/partner";
+import { BookingDialog } from "@/components/BookingDialog";
 import { MapPin, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { formatINR } from "@/data/resort";
 import { effectivePrice, useSignedUrls } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 
-type PublicRoom = {
-  id: string;
-  name: string;
-  room_type: string;
-  capacity: number;
-  price: number;
-  seasonal_price: number | null;
-  season_start: string | null;
-  season_end: string | null;
-  discount_pct: number;
-  facilities: string[];
-  photos: string[];
-};
-type PublicListing = {
-  id: string;
-  name: string;
-  kind: string;
-  description: string;
-  location: string;
-  amenities: string[];
-  check_in: string;
-  check_out: string;
-  photos: string[];
-  rooms: PublicRoom[];
-};
-
 /** Approved partner listings only; the database function never returns drafts, pending, rejected or suspended listings. */
 export function PartnerStays() {
-  const listings = useQuery({
-    queryKey: ["public-listings"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_listings");
-      if (error) throw error;
-      return (data ?? []) as unknown as PublicListing[];
-    },
-  });
+  const { user } = useAuth();
+  const listings = usePublicListings();
+  const [booking, setBooking] = useState<{ listing: PublicListing; room: PublicRoom } | null>(null);
   const covers = useSignedUrls((listings.data ?? []).map((l) => l.photos[0]).filter(Boolean));
   if (listings.error)
     return (
@@ -53,14 +25,28 @@ export function PartnerStays() {
         </Button>
       </section>
     );
-  if (listings.isLoading || !listings.data?.length) return null;
+  if (listings.isLoading)
+    return (
+      <p role="status" className="mx-auto max-w-7xl px-4 py-8 text-muted-foreground">
+        Loading approved rooms…
+      </p>
+    );
+  if (!listings.data?.length)
+    return (
+      <p className="mx-auto max-w-7xl px-4 py-8 text-muted-foreground">
+        No approved partner rooms are listed yet.
+      </p>
+    );
   return (
     <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
       <p className="eyebrow">Partner stays</p>
       <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Approved partner properties</h2>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {listings.data.map((l) => {
-          const from = l.rooms.length ? Math.min(...l.rooms.map((r) => effectivePrice(r))) : null;
+          const openRooms = l.rooms.filter((r) => r.available && r.units > 0);
+          const from = openRooms.length
+            ? Math.min(...openRooms.map((r) => effectivePrice(r)))
+            : null;
           return (
             <article key={l.id} className="overflow-hidden rounded-2xl bg-card shadow-card">
               {covers.data?.[l.photos[0]] ? (
@@ -85,22 +71,39 @@ export function PartnerStays() {
                 <p className="mt-2 text-sm text-muted-foreground">{l.description}</p>
                 <ul className="mt-3 space-y-1 text-sm">
                   {l.rooms.map((r) => (
-                    <li key={r.id} className="flex justify-between gap-2">
-                      <span>
-                        {r.name}{" "}
-                        <span className="text-muted-foreground">
-                          <Users className="inline h-3.5 w-3.5" /> {r.capacity}
+                    <li key={r.id} className="border-t py-3">
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <span className="font-semibold">
+                          {r.name} · {r.room_type}
                         </span>
-                      </span>
-                      <span className="font-semibold text-primary">
-                        {formatINR(effectivePrice(r))}
-                      </span>
+                        <span className="font-semibold text-primary">
+                          {formatINR(effectivePrice(r))}/night
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <Users className="inline h-3.5 w-3.5" /> Up to {r.capacity} ·{" "}
+                        {r.available && r.units > 0 ? "Open for requests" : "Unavailable"}
+                      </p>
+                      {r.available &&
+                        r.units > 0 &&
+                        (user ? (
+                          <Button
+                            className="mt-3"
+                            onClick={() => setBooking({ listing: l, room: r })}
+                          >
+                            Request booking
+                          </Button>
+                        ) : (
+                          <Button asChild className="mt-3">
+                            <Link to="/auth">Sign in to book</Link>
+                          </Button>
+                        ))}
                     </li>
                   ))}
                 </ul>
                 {from != null && (
                   <p className="mt-3 text-xs text-muted-foreground">
-                    From {formatINR(from)} per night · Contact the property to book.
+                    From {formatINR(from)} per night · Final total depends on your dates.
                   </p>
                 )}
               </div>
@@ -108,6 +111,7 @@ export function PartnerStays() {
           );
         })}
       </div>
+      {booking && <BookingDialog room={null} partner={booking} onClose={() => setBooking(null)} />}
     </section>
   );
 }

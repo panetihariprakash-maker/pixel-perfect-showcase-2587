@@ -61,6 +61,7 @@ function Operations() {
     <div>
       <PageHeader eyebrow="Internal · Demo role-based access" title="Operations Dashboard" description="Manage room readiness, housekeeping, maintenance and daily resort operations." />
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+        <p className="border-l-4 border-accent bg-accent/10 p-4 text-sm">Sample operations data, not live resort activity. Task and readiness changes stay in this browser.</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {[["Rooms ready", `${ready} / ${units.length}`], ["Open tasks", open], ["Active alerts", opsAlerts.length]].map(([k, v]) => (
             <div key={String(k)} className="rounded-2xl bg-card p-5 shadow-card"><p className="text-sm text-muted-foreground">{k}</p><p className="font-display text-4xl font-semibold">{v}</p></div>

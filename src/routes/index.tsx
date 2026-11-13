@@ -46,14 +46,15 @@ function Home() {
           <h1 className="mt-3 max-w-4xl text-5xl font-semibold leading-[1.02] sm:text-7xl">{resort.name}</h1>
           <p className="mt-5 max-w-2xl text-base opacity-90 sm:text-lg">{resort.description}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/dashboard" hash="rooms" className="btn btn-accent">Explore Rooms</Link>
+            <Link to="/rooms" className="btn btn-accent">Explore Rooms</Link>
             <Link to="/dashboard" hash="concierge" className="btn btn-ghost-light">Plan Your Stay</Link>
             <button onClick={openAssistant} className="btn btn-ghost-light">Ask AI Assistant</button>
           </div>
         </div>
       </section>
 
-      <Section eyebrow="Stay" title="Rooms & Villas" link={<Link to="/dashboard" hash="rooms" className="btn btn-outline">View all rooms</Link>}>
+      <Section eyebrow="Stay" title="Rooms & Villas" link={<Link to="/rooms" className="btn btn-outline">View all rooms</Link>}>
+        <p className="mb-5 text-sm text-muted-foreground">Sanctuary sample stays · Browse all rooms for approved partner properties.</p>
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {rooms.map((r) => (
             <Link key={r.id} to="/rooms" className="group overflow-hidden rounded-2xl bg-card shadow-card">

@@ -81,7 +81,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
 
 export function PageHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description?: string }) {
   return (
-    <div className="border-b bg-secondary/60">
+    <div className="border-b bg-secondary/10">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{title}</h1>

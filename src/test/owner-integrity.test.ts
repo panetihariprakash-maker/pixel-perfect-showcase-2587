@@ -181,4 +181,71 @@ describe.skipIf(!ready)("Owner reservation integrity", () => {
     expect(flag.ok).toBe(true);
     expect(typeof (await flag.json())).toBe("boolean");
   });
+  it("rejects guest requests to an unapproved property", async () => {
+    const guest = accounts[1];
+    if (!guest) throw new Error("Test guest missing");
+    const res = await call("/rest/v1/rpc/request_partner_stay", guest.token, "POST", {
+      _room_id: room,
+      _check_in: "2026-12-25",
+      _check_out: "2026-12-27",
+      _guests: 2,
+      _name: "QA Guest",
+      _email: "qa@example.com",
+      _phone: "9876543210",
+      _requests: "",
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("saves a guest-linked request with authoritative seasonal total and private readback", async () => {
+    const guest = accounts[1];
+    const owner = accounts[0];
+    if (!guest || !owner || !admin) throw new Error("Test configuration missing");
+    const approve = await call(
+      `/rest/v1/owner_properties?id=eq.${property}`,
+      admin,
+      "PATCH",
+      { status: "Approved" },
+      true,
+    );
+    expect(approve.ok).toBe(true);
+    const res = await call("/rest/v1/rpc/request_partner_stay", guest.token, "POST", {
+      _room_id: room,
+      _check_in: "2026-12-25",
+      _check_out: "2026-12-27",
+      _guests: 2,
+      _name: "QA Guest",
+      _email: "qa@example.com",
+      _phone: "9876543210",
+      _requests: "Guest request",
+    });
+    expect(res.ok).toBe(true);
+    const id = await res.json();
+    const read = await call("/rest/v1/rpc/my_partner_stays", guest.token, "POST", {});
+    const rows = await read.json();
+    const saved = rows.find((r: { id: string }) => r.id === id);
+    expect(saved.amount).toBe(27000);
+    expect(saved.status).toBe("Requested");
+    expect(saved).not.toHaveProperty("notes");
+    expect(saved).not.toHaveProperty("owner_id");
+    const otherRead = await call("/rest/v1/rpc/my_partner_stays", owner.token, "POST", {});
+    expect(await otherRead.json()).toEqual([]);
+    const otherCancel = await call("/rest/v1/rpc/cancel_partner_stay", owner.token, "POST", {
+      _id: id,
+    });
+    expect(otherCancel.ok).toBe(false);
+    const cancel = await call("/rest/v1/rpc/cancel_partner_stay", guest.token, "POST", { _id: id });
+    expect(cancel.ok).toBe(true);
+    const reread = await call("/rest/v1/rpc/my_partner_stays", guest.token, "POST", {});
+    expect((await reread.json()).find((r: { id: string }) => r.id === id).status).toBe("Cancelled");
+  });
+  it("blocks owner-forged guest account linkage", async () => {
+    const owner = accounts[0],
+      guest = accounts[1];
+    if (!owner || !guest) throw new Error("Test accounts missing");
+    const res = await call("/rest/v1/owner_reservations", owner.token, "POST", {
+      ...request(),
+      guest_user_id: guest.id,
+    });
+    expect(res.ok).toBe(false);
+  });
 });

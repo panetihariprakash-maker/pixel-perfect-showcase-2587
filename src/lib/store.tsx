@@ -73,6 +73,7 @@ interface Store extends State {
   addPlan: (p: PlannedActivity) => Promise<void>;
   removePlan: (id: string) => Promise<void>;
   dataError: string;
+  bookingsLoading: boolean;
 }
 
 const KEY = "azure-ridge-demo-v1";
@@ -92,6 +93,7 @@ const Ctx = (g.__azureStoreCtx ??= createContext<Store | null>(null));
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [privateBookings, setPrivateBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [verifiedRole, setVerifiedRole] = useState<Role>("guest");
   const [state, setState] = useState<State>(initial);
   const [loaded, setLoaded] = useState(false);
@@ -130,6 +132,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     guestState.current = { plans: [], enquiries: [] };
     setDataError("");
     setPrivateBookings([]);
+    setBookingsLoading(!!user);
     setVerifiedRole("guest");
     setState((s) => ({ ...s, plans: [], enquiries: [] }));
     if (user) {
@@ -160,6 +163,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .order("created_at", { ascending: false })
         .then(({ data, error }) => {
           if (alive) {
+            setBookingsLoading(false);
             if (error) setDataError("Unable to load your bookings. Please refresh.");
             else setPrivateBookings((data ?? []).map((row) => row.details as unknown as Booking));
           }
@@ -213,6 +217,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const store: Store = {
     ...state,
     dataError,
+    bookingsLoading,
     role: verifiedRole,
     bookings: verifiedRole === "guest" ? privateBookings : state.bookings,
     setRole: () => {

@@ -48,6 +48,7 @@ function FrontDesk() {
     <div>
       <PageHeader eyebrow="Internal · Demo role-based access" title="Front Desk Dashboard" description="Arrivals, departures, reservations and room availability for today." />
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+        <p className="border-l-4 border-accent bg-accent/10 p-4 text-sm">Sample front-desk records, not live reservations. Changes remain in this session.</p>
         <div className="grid gap-4 sm:grid-cols-4">
           {[["Today's arrivals", arrivals.length], ["Today's departures", departures.length], ["In-house", active.filter((b) => b.status === "Checked In").length], ["Reservations", bookings.length]].map(([k, v]) => (
             <div key={String(k)} className="rounded-2xl bg-card p-5 shadow-card"><p className="text-sm text-muted-foreground">{k}</p><p className="font-display text-4xl font-semibold">{v}</p></div>

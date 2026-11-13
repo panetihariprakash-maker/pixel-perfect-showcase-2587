@@ -89,6 +89,7 @@ export const splitList = (s: string) =>
 
 export function useOwnerData(userId: string, enabled: boolean) {
   const properties = useQuery({
+    refetchInterval: 30000,
     queryKey: ["owner", userId, "properties"],
     enabled,
     queryFn: async () => {
@@ -101,6 +102,7 @@ export function useOwnerData(userId: string, enabled: boolean) {
     },
   });
   const rooms = useQuery({
+    refetchInterval: 30000,
     queryKey: ["owner", userId, "rooms"],
     enabled,
     queryFn: async () => {
@@ -113,6 +115,7 @@ export function useOwnerData(userId: string, enabled: boolean) {
     },
   });
   const reservations = useQuery({
+    refetchInterval: 15000,
     queryKey: ["owner", userId, "reservations"],
     enabled,
     queryFn: async () => {

@@ -26,8 +26,8 @@ function RoomsPage() {
           <p className="mt-3 max-w-2xl text-muted-foreground">Every accommodation at the Sanctuary. Booking requests need a guest account; payments stay in test mode.</p>
         </div>
       </section>
-      <RoomsSection />
       <PartnerStays />
+      <RoomsSection />
     </div>
   );
 }

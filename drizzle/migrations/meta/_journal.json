@@ -64,6 +64,20 @@
       "when": 1794546422374,
       "tag": "0008_week1_owner_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794547761802,
+      "tag": "0009_week2_partner_guest_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794547846814,
+      "tag": "0010_protect_partner_guest_identity",
+      "breakpoints": true
     }
   ]
 }

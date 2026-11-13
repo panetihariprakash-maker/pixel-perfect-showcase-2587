@@ -32,6 +32,8 @@ export function RoomsSection() {
   return (
     <div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <h2 className="mb-2 text-3xl font-semibold">Sanctuary sample stays</h2>
+        <p className="mb-6 text-sm text-muted-foreground">Demonstration catalogue · Prices and availability need resort confirmation.</p>
         <div className="mb-8 grid gap-3 rounded-2xl bg-card p-4 shadow-card sm:grid-cols-2 lg:grid-cols-6">
           <label className="text-sm font-medium lg:col-span-2">Search
             <input className="field mt-1" type="search" placeholder="Room or villa name" value={query} onChange={(e) => setQuery(e.target.value)} />

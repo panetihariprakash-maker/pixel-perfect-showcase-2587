@@ -65,7 +65,7 @@ src/
   start.ts                  Auth bearer, error and CSRF middleware
   server.ts                 Server error wrapper
   test/                     Existing and new tests
-drizzle/migrations/          Nine ordered SQL migrations and their metadata
+drizzle/migrations/          Eleven ordered SQL migrations and their metadata
 public/                      Favicon and robots configuration
 ```
 
@@ -88,7 +88,7 @@ The project uses its existing Lovable Cloud backend, not an independently connec
 | `platform_settings`   | Admin-controlled platform configuration                                                     |
 | `admin_audit_log`     | Trigger-created audit history                                                               |
 
-The nine SQL files under `drizzle/migrations/` are the schema source of truth. `drizzle/schema.ts` is intentionally a blank placeholder, not an ORM model. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant reads approved partner facts anonymously and strips unexpected fields; it never reads private guest records. The current public partner catalogue is empty.
+The eleven SQL files under `drizzle/migrations/` are the schema source of truth. `drizzle/schema.ts` is intentionally a blank placeholder, not an ORM model. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant reads approved partner facts anonymously and strips unexpected fields; it never reads private guest records. The current public partner catalogue is empty.
 
 For a separate deployment, apply the SQL files in journal order using a migration administrator and preserve grants/policies/triggers. Provision `listing-photos` separately as private storage with a 10 MB limit; storage bucket provisioning is not in the SQL chain. Never generate models from the blank Drizzle placeholder or blindly replay applied migrations. In Lovable, use the managed migration workflow. New triggers validate guest amounts/dates/capacity, saved array shapes and owner reservation ownership/pricing/units; unsafe partial property transfer is blocked.
 
@@ -142,7 +142,7 @@ Server configuration: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, privileged `SU
 
 ## Current limitations and future improvements
 
-Live payment, verified resort policies/contact/location, live guest/partner inventory integration, full email-confirmation/Google-consent testing, shared operational persistence, cross-device guest-state conflict handling, photo-orphan cleanup, AI abuse controls and full privileged owner/admin browser regression remain outstanding. The existing planning form is deterministic; the guest assistant is a genuine Gemini conversation. Owner values represent bookings, not collected payments. Public partner checkout is not implemented. Owner room-edit reapproval and independent publish-only permissions still need completion.
+Live payment, verified resort policies/contact/location, full email-confirmation/Google-consent testing, shared operational persistence, cross-device guest-state conflict handling, photo-orphan cleanup, AI abuse controls and full privileged owner/admin browser regression remain outstanding. The existing planning form is deterministic; the guest assistant is a genuine Gemini conversation. Owner values represent bookings, not collected payments. Partner booking requests now reuse owner reservations; live payment checkout remains unimplemented. Owner room-edit reapproval and independent publish-only permissions still need completion.
 
 ## Current verification and resubmission
 
@@ -151,3 +151,7 @@ Latest checks: **39 tests passed in 8 files**; automatic TypeScript/production b
 See [Week 1 technical report](docs/WEEK-1-TECHNICAL-REPORT.md), [evaluation checklist](docs/WEEK-1-EVALUATION-CHECKLIST.md), and [implementation report](docs/WEEK-1-IMPLEMENTATION-REPORT.md) for current checks and gaps. Older `WEEK_1_REPORT.md` and `EVIDENCE_CHECKLIST.md` record the previous improvement pass, not the latest completion audit.
 
 Latest browser verification used temporary confirmed accounts: login/refresh, edited-profile booking prefill, pending booking save/readback/cancel, full enquiry/activity persistence, guest admin denial, mobile drawer and logout succeeded; a real Gemini answer reflected the public database catalogue. Placeholder signup emails are blocked by the hosted service, with a clear actual error—real inbox confirmation/recovery remains manual. Do not claim production readiness or all five evaluation requirements COMPLETE until the checklist evidence is supplied.
+
+## Week 2 update
+
+See [Week 2 implementation report](docs/WEEK-2-IMPLEMENTATION-REPORT.md) for the shared navy/teal/gold refresh, SQL-backed partner booking flow, private guest readback/cancellation, inventory summaries, 46 passing tests and current Gemini service/quota limitations. No duplicate tables or replacement architecture were introduced.

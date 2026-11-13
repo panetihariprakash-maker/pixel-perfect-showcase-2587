@@ -28,17 +28,27 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState<AssistantMessage[] | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const generation = useRef(0);
   const tr = t(lang);
   useEffect(() => {
     if (openSignal > 0) setOpen(true);
   }, [openSignal]);
   useEffect(() => {
+    generation.current += 1;
     abort.current?.abort();
+    setInput("");
+    setBusy(false);
     setMsgs([]);
     setError("");
     setRetry(null);
   }, [user?.id]);
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(
+    () => () => {
+      generation.current += 1;
+      abort.current?.abort();
+    },
+    [],
+  );
 
   const requestAnswer = async (history: AssistantMessage[]) => {
     if (busy) return;
@@ -47,6 +57,7 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
     setRetry(null);
     setMsgs([...history, { role: "model", text: "" }]);
     const controller = new AbortController();
+    const requestId = ++generation.current;
     abort.current = controller;
     try {
       const response = await fetch("/api/public/assistant", {
@@ -68,6 +79,10 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
       try {
         while (true) {
           const { value, done } = await reader.read();
+          if (requestId !== generation.current) {
+            await reader.cancel();
+            return;
+          }
           buffer += decoder.decode(value, { stream: !done });
           let pos;
           while ((pos = buffer.indexOf("\n")) >= 0) {
@@ -89,6 +104,7 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
         reader.releaseLock();
       }
     } catch (failure) {
+      if (requestId !== generation.current) return;
       if (controller.signal.aborted) setError("Answer stopped.");
       else {
         setError(
@@ -99,7 +115,7 @@ export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
         setRetry(history);
       }
     } finally {
-      setBusy(false);
+      if (requestId === generation.current) setBusy(false);
     }
   };
   const send = (text: string) => {

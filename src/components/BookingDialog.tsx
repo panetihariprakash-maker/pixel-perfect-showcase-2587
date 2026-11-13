@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { Modal, Field, StatusBadge } from "@/components/ui-kit";
@@ -16,6 +16,14 @@ import { useStore, EMAIL_RE, PHONE_RE } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
+import {
+  partnerRequestSchema,
+  partnerStaySchema,
+  type PublicListing,
+  type PublicRoom,
+} from "@/lib/partner";
+import { stayAmount } from "@/lib/owner";
+
 type Step = 1 | 2 | 3 | 4 | 5;
 const stepNames = ["Dates & guests", "Guest details", "Summary", "Payment", "Confirmation"];
 
@@ -23,12 +31,17 @@ export function BookingDialog({
   room,
   onClose,
   initial,
+  partner,
 }: {
   room: Room | null;
+  partner?: { listing: PublicListing; room: PublicRoom };
   onClose: () => void;
   initial?: { checkIn?: string; checkOut?: string; guests?: number };
 }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const selectedRoom = partner?.room ?? room;
+  const [partnerReference, setPartnerReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const { addBooking } = useStore();
@@ -36,7 +49,7 @@ export function BookingDialog({
   const [f, setF] = useState({
     checkIn: initial?.checkIn ?? isoDay(7),
     checkOut: initial?.checkOut ?? isoDay(9),
-    guests: String(initial?.guests ?? Math.min(2, room?.capacity ?? 2)),
+    guests: String(initial?.guests ?? Math.min(2, selectedRoom?.capacity ?? 2)),
     name: "",
     email: user?.email ?? "",
     phone: "",
@@ -67,9 +80,13 @@ export function BookingDialog({
       }));
   }, [profile]);
 
-  if (!room) return null;
+  if (!selectedRoom) return null;
   const nights = nightsBetween(f.checkIn, f.checkOut);
-  const total = nights > 0 ? nights * room.price : 0;
+  const total = partner
+    ? stayAmount(partner.room, f.checkIn, f.checkOut)
+    : nights > 0
+      ? nights * selectedRoom.price
+      : 0;
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF({ ...f, [k]: e.target.value });
 
@@ -78,11 +95,12 @@ export function BookingDialog({
     if (!f.checkIn) e.checkIn = "Please choose a check-in date.";
     else if (f.checkIn < isoDay(0)) e.checkIn = "Check-in cannot be in the past.";
     if (!f.checkOut) e.checkOut = "Please choose a check-out date.";
+    else if (partner && nights > 90) e.checkOut = "A stay can be at most 90 nights.";
     else if (f.checkIn && nights <= 0) e.checkOut = "Check-out must be after check-in.";
     const g = Number(f.guests);
     if (!Number.isInteger(g) || g < 1) e.guests = "Enter at least 1 guest.";
-    else if (g > room.capacity)
-      e.guests = `This ${room.type.toLowerCase()} fits up to ${room.capacity} guests.`;
+    else if (g > selectedRoom.capacity)
+      e.guests = `This ${("type" in selectedRoom ? selectedRoom.type : selectedRoom.room_type).toLowerCase()} fits up to ${selectedRoom.capacity} guests.`;
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -98,6 +116,10 @@ export function BookingDialog({
 
   const confirm = async () => {
     if (saving) return;
+    if (!validate1() || !validate2()) {
+      setStep(1);
+      return;
+    }
     if (!user) {
       setSaveError("Please sign in before saving a booking.");
       return;
@@ -110,7 +132,7 @@ export function BookingDialog({
       guestName: f.name.trim(),
       email: f.email.trim(),
       phone: f.phone.trim(),
-      roomId: room.id,
+      roomId: selectedRoom.id,
       checkIn: f.checkIn,
       checkOut: f.checkOut,
       guests: Number(f.guests),
@@ -122,8 +144,37 @@ export function BookingDialog({
       requests: f.requests.trim() || undefined,
     };
     try {
-      await addBooking(b);
-      setCreated(b);
+      if (partner) {
+        const input = partnerRequestSchema.parse({
+          _room_id: partner.room.id,
+          _check_in: f.checkIn,
+          _check_out: f.checkOut,
+          _guests: Number(f.guests),
+          _name: f.name,
+          _email: f.email,
+          _phone: f.phone.replace(/\s/g, ""),
+          _requests: f.requests,
+        });
+        const { data, error } = await supabase.rpc("request_partner_stay", input);
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error("No booking reference was returned.");
+        setPartnerReference(data);
+        const result = await supabase.rpc("my_partner_stays");
+        if (result.error)
+          throw new Error(
+            "Your request was saved. Open Dashboard to check its details before trying again.",
+          );
+        const saved = Array.isArray(result.data)
+          ? result.data.map((r) => partnerStaySchema.parse(r)).find((r) => r.id === data)
+          : undefined;
+        if (!saved) throw new Error("Your request was saved. Open Dashboard to check its details.");
+        setCreated({ ...b, id: saved.id, total: saved.amount });
+        await queryClient.invalidateQueries({ queryKey: ["guest-partner-stays", user.id] });
+        await queryClient.invalidateQueries({ queryKey: ["public-listings"] });
+      } else {
+        await addBooking(b);
+        setCreated(b);
+      }
       setStep(5);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save booking.");
@@ -133,7 +184,11 @@ export function BookingDialog({
   };
 
   return (
-    <Modal open onClose={onClose} title={step === 5 ? "Booking recorded" : `Book ${room.name}`}>
+    <Modal
+      open
+      onClose={onClose}
+      title={step === 5 ? "Booking recorded" : `Book ${selectedRoom.name}`}
+    >
       {saveError && (
         <p role="alert" className="mb-4 text-sm text-destructive">
           {saveError}
@@ -179,7 +234,7 @@ export function BookingDialog({
             </Field>
           </div>
           <Field
-            label={`Number of guests (max ${room.capacity})`}
+            label={`Number of guests (max ${selectedRoom.capacity})`}
             htmlFor="b-g"
             error={errors.guests}
           >
@@ -187,7 +242,7 @@ export function BookingDialog({
               id="b-g"
               type="number"
               min={1}
-              max={room.capacity}
+              max={selectedRoom.capacity}
               className="field"
               value={f.guests}
               onChange={set("guests")}
@@ -195,9 +250,7 @@ export function BookingDialog({
             />
           </Field>
           <div className="flex justify-end">
-            <button className="btn btn-primary" onClick={() => validate1() && setStep(2)}>
-              Continue
-            </button>
+            <Button onClick={() => validate1() && setStep(2)}>Continue</Button>
           </div>
         </div>
       )}
@@ -211,6 +264,7 @@ export function BookingDialog({
               value={f.name}
               onChange={set("name")}
               aria-invalid={!!errors.name}
+              maxLength={100}
               autoComplete="name"
             />
           </Field>
@@ -223,6 +277,7 @@ export function BookingDialog({
                 value={f.email}
                 onChange={set("email")}
                 aria-invalid={!!errors.email}
+                maxLength={255}
                 autoComplete="email"
               />
             </Field>
@@ -235,6 +290,7 @@ export function BookingDialog({
                 onChange={set("phone")}
                 aria-invalid={!!errors.phone}
                 placeholder="98765 43210"
+                maxLength={16}
                 autoComplete="tel"
               />
             </Field>
@@ -242,6 +298,7 @@ export function BookingDialog({
           <Field label="Special requests (optional)" htmlFor="b-req">
             <textarea
               id="b-req"
+              maxLength={2000}
               rows={3}
               className="field"
               value={f.requests}
@@ -249,12 +306,10 @@ export function BookingDialog({
             />
           </Field>
           <div className="flex justify-between">
-            <button className="btn btn-outline" onClick={() => setStep(1)}>
+            <Button variant="outline" onClick={() => setStep(1)}>
               Back
-            </button>
-            <button className="btn btn-primary" onClick={() => validate2() && setStep(3)}>
-              Review booking
-            </button>
+            </Button>
+            <Button onClick={() => validate2() && setStep(3)}>Review booking</Button>
           </div>
         </div>
       )}
@@ -263,17 +318,17 @@ export function BookingDialog({
         <div className="space-y-4">
           <dl className="divide-y rounded-xl border text-sm">
             {[
-              ["Room / Villa", room.name],
+              ["Room / Villa", selectedRoom.name],
               ["Check-in", f.checkIn],
               ["Check-out", f.checkOut],
               ["Number of guests", f.guests],
               ["Guest", `${f.name} · ${f.email} · ${f.phone}`],
-              ["Price per night", formatINR(room.price)],
+              ["Price per night", formatINR(selectedRoom.price)],
               ["Number of nights", String(nights)],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 px-4 py-2.5">
                 <dt className="text-muted-foreground">{k}</dt>
-                <dd className="text-right font-medium">{v}</dd>
+                <dd className="min-w-0 break-words text-right font-medium">{v}</dd>
               </div>
             ))}
             <div className="flex justify-between bg-secondary/60 px-4 py-3">
@@ -282,16 +337,17 @@ export function BookingDialog({
             </div>
           </dl>
           <p className="text-xs text-muted-foreground">
-            {formatINR(room.price)} × {nights} night{nights > 1 ? "s" : ""} = {formatINR(total)}{" "}
-            (taxes excluded in demo)
+            {formatINR(selectedRoom.price)} × {nights} night{nights > 1 ? "s" : ""} ={" "}
+            {formatINR(total)}{" "}
+            {partner
+              ? "(estimate; seasonal rates and discounts included)"
+              : "(taxes excluded in demo)"}
           </p>
           <div className="flex justify-between">
-            <button className="btn btn-outline" onClick={() => setStep(2)}>
+            <Button variant="outline" onClick={() => setStep(2)}>
               Back
-            </button>
-            <button className="btn btn-primary" onClick={() => setStep(4)}>
-              Continue to payment
-            </button>
+            </Button>
+            <Button onClick={() => setStep(4)}>Continue to payment</Button>
           </div>
         </div>
       )}
@@ -303,9 +359,9 @@ export function BookingDialog({
               <CreditCard className="h-5 w-5 text-primary" /> Payment Test / Payment Ready
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              A live payment gateway is not connected in this Week 1 prototype, so no money will be
-              charged and no payment will be marked as successful. Your booking will be saved with
-              payment status <strong>“Payment Ready/Test”</strong>.
+              {partner
+                ? "No payment will be charged. This request requires owner confirmation and does not reserve a unit until accepted."
+                : "Live payments are not connected. Your request will be saved as Payment Ready/Test; no payment success is recorded."}
             </p>
             <p className="mt-3 text-sm">
               Amount due: <strong>{formatINR(total)}</strong>
@@ -315,8 +371,12 @@ export function BookingDialog({
             <Button variant="outline" disabled={saving} onClick={() => setStep(3)}>
               Back
             </Button>
-            <Button className="btn btn-accent" onClick={confirm} disabled={saving}>
-              {saving ? "Saving…" : "Save booking (test mode)"}
+            <Button
+              className="btn btn-accent"
+              onClick={confirm}
+              disabled={saving || !!partnerReference}
+            >
+              {saving ? "Saving…" : partner ? "Submit booking request" : "Save booking (test mode)"}
             </Button>
           </div>
         </div>
@@ -327,20 +387,21 @@ export function BookingDialog({
           <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
           <p className="text-lg font-semibold">Reference {created.id}</p>
           <div className="flex justify-center gap-2">
-            <StatusBadge status={created.status} />
-            <StatusBadge status={created.payment} />
+            <StatusBadge status={partner ? "Requested" : created.status} />
+            {!partner && <StatusBadge status={created.payment} />}
           </div>
           <p className="text-sm text-muted-foreground">
-            Your booking request is saved for demo purposes. Payment has not been taken — it is in
-            test/ready state.
+            {partner
+              ? `Your request is saved for ${partner.listing.name}, awaiting owner confirmation. Total: ${formatINR(created.total)}. No payment has been taken.`
+              : "Your demo booking request is saved. No payment has been taken."}
           </p>
           <div className="flex flex-col justify-center gap-2 sm:flex-row">
-            <Link to="/dashboard" className="btn btn-primary" onClick={onClose}>
+            <Link to="/dashboard" hash="my-bookings" className="btn btn-primary" onClick={onClose}>
               View in Dashboard
             </Link>
-            <button className="btn btn-outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose}>
               Close
-            </button>
+            </Button>
           </div>
         </div>
       )}

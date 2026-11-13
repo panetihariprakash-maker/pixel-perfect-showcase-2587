@@ -24,7 +24,7 @@ export function SiteHeader() {
     : null;
 
   const linkCls = "rounded-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground";
-  const active = { className: "bg-secondary text-foreground" };
+  const active = { className: "bg-secondary text-secondary-foreground" };
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">

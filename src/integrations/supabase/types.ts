@@ -267,6 +267,7 @@ export type Database = {
           guest_email: string
           guest_name: string
           guest_phone: string
+          guest_user_id: string | null
           guests: number
           id: string
           notes: string
@@ -283,6 +284,7 @@ export type Database = {
           guest_email?: string
           guest_name: string
           guest_phone?: string
+          guest_user_id?: string | null
           guests?: number
           id?: string
           notes?: string
@@ -299,6 +301,7 @@ export type Database = {
           guest_email?: string
           guest_name?: string
           guest_phone?: string
+          guest_user_id?: string | null
           guests?: number
           id?: string
           notes?: string
@@ -518,14 +521,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_partner_stay: { Args: { _id: string }; Returns: undefined }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_approved_owner: { Args: { _user_id: string }; Returns: boolean }
       is_privileged: { Args: never; Returns: boolean }
       is_public_photo: { Args: { _path: string }; Returns: boolean }
+      my_partner_stays: { Args: never; Returns: Json }
       owner_applications_open: { Args: never; Returns: boolean }
       owner_can: { Args: { _perm: string; _user_id: string }; Returns: boolean }
       platform_announcement: { Args: never; Returns: string }
       public_listings: { Args: never; Returns: Json }
+      request_partner_stay: {
+        Args: {
+          _check_in: string
+          _check_out: string
+          _email: string
+          _guests: number
+          _name: string
+          _phone: string
+          _requests?: string
+          _room_id: string
+        }
+        Returns: string
+      }
       user_role_label: { Args: { _uid: string }; Returns: string }
     }
     Enums: {

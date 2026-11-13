@@ -30,3 +30,5 @@
 - Validate guest requests and owner reservations with database triggers; demo room constants in the guest trigger must match the central catalogue so forged totals and capacities are rejected.
 - Owner stay totals sum individual nights using the same seasonal/discount calculation in UI and database; checkout is excluded so boundary stays are priced correctly.
 - Property reassignment is blocked until a transaction can transfer dependent reservations and media safely; draft photo removal only changes metadata so Cancel preserves stored photos.
+- Partner guest requests reuse owner_reservations through authenticated, narrowly scoped database functions; guests never read owner notes or identifiers, and database pricing remains authoritative.
+- Public inventory exposes aggregate unit counts only; guest dashboard counts are private requests plus approved catalogue inventory, never sample operational statistics.

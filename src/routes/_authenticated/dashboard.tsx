@@ -21,6 +21,9 @@ import { ConciergeSection } from "@/components/guest/ConciergeSection";
 import { RoomsSection } from "@/components/guest/RoomsSection";
 import { ActivitiesSection } from "@/components/guest/ActivitiesSection";
 import { EnquirySection } from "@/components/guest/EnquirySection";
+import { PartnerStays } from "@/components/guest/PartnerStays";
+import { PartnerBookings } from "@/components/guest/PartnerBookings";
+import { inventorySummary, usePartnerStays, usePublicListings } from "@/lib/partner";
 
 function HubSection({
   id,
@@ -71,7 +74,13 @@ function Dashboard() {
   const hash = useRouterState({ select: (s) => s.location.hash });
   const section = dashboardItems.some(([id]) => id === hash) ? hash : "overview";
   const [cancelError, setCancelError] = useState("");
-  const { bookings, updateBooking, plans, dataError } = useStore();
+  const { bookings, updateBooking, plans, dataError, bookingsLoading } = useStore();
+  const partnerStays = usePartnerStays(user?.id);
+  const catalogue = usePublicListings();
+  const inventory = inventorySummary(catalogue.data ?? []);
+  const pending =
+    minePending(bookings, user?.id) +
+    (partnerStays.data ?? []).filter((r) => r.status === "Requested").length;
   const mine = bookings.filter((b) => b.guestId === user?.id);
   const today = isoDay(0);
   const upcoming = mine.filter((b) => b.checkOut >= today && b.status !== "Cancelled");
@@ -97,18 +106,53 @@ function Dashboard() {
             Welcome back, {user?.user_metadata?.full_name || user?.user_metadata?.name || "guest"}.
           </p>
           <h2 className="mt-2 text-3xl font-semibold">Your next mountain escape</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Upcoming stays", upcoming.length],
-              ["Booking requests", mine.length],
-              ["Planned activities", plans.length],
+              [
+                "My total requests",
+                partnerStays.isLoading || bookingsLoading
+                  ? "…"
+                  : partnerStays.error
+                    ? "—"
+                    : mine.length + (partnerStays.data?.length ?? 0),
+              ],
+              [
+                "My pending requests",
+                partnerStays.isLoading || bookingsLoading
+                  ? "…"
+                  : partnerStays.error
+                    ? "—"
+                    : pending,
+              ],
+              [
+                "Available partner units today",
+                catalogue.isLoading ? "…" : catalogue.error ? "—" : inventory.available,
+              ],
+              [
+                "Occupied partner units today",
+                catalogue.isLoading ? "…" : catalogue.error ? "—" : inventory.occupied,
+              ],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border bg-card p-5">
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="mt-2 font-display text-4xl font-semibold">{value}</p>
+                <p className="mt-2 text-4xl font-semibold tabular-nums">{value}</p>
               </div>
             ))}
           </div>
+          {(partnerStays.error || catalogue.error) && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              Some summaries could not load.{" "}
+              <Button
+                variant="link"
+                onClick={() => {
+                  partnerStays.refetch();
+                  catalogue.refetch();
+                }}
+              >
+                Try again
+              </Button>
+            </p>
+          )}
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {[
               ["rooms", "Find your sanctuary", "Rooms & Villas"],
@@ -155,6 +199,7 @@ function Dashboard() {
       )}
       {section === "rooms" && (
         <HubSection id="rooms" eyebrow="Stay" title="Rooms & Villas">
+          <PartnerStays />
           <RoomsSection />
         </HubSection>
       )}
@@ -166,6 +211,11 @@ function Dashboard() {
       {["my-bookings", "upcoming", "past", "profile"].includes(section) && (
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="space-y-8">
+            {section !== "profile" && (
+              <PartnerBookings
+                filter={section === "past" ? "past" : section === "upcoming" ? "upcoming" : "all"}
+              />
+            )}
             {section !== "profile" && (
               <section id="my-bookings" aria-labelledby="my-bookings-h" className="scroll-mt-32">
                 <h2 id="my-bookings-h" className="mb-4 text-3xl font-semibold">
@@ -329,6 +379,10 @@ function Dashboard() {
       )}
     </DashboardSidebar>
   );
+}
+
+function minePending(bookings: Booking[], userId?: string) {
+  return bookings.filter((b) => b.guestId === userId && b.status === "Pending").length;
 }
 
 function BookingList({
