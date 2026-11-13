@@ -1,4 +1,8 @@
 # Azure Ridge update
+- [ ] Replace scripted assistant with server-side Gemini, session context and tested error/retry states (live test requires Google AI Studio key).
+- [ ] Save full enquiries and activity plans with confirmed writes and visible failures; preserve private access.
+- [ ] Document five feature areas, user flow, real database structure and Week 1 evidence.
+- [ ] Run existing and new tests and verify desktop/mobile flows.
 - [x] Add public information-page menu links, preserve footer/sidebar links, rename guest Dashboard labels, and verify navigation.
 - [x] Enable secure guest authentication and private profiles/bookings.
 - [x] Replace dashboard tab bar with collapsible sidebar; preserve guest features.
