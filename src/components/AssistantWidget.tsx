@@ -1,108 +1,226 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { MessageCircle, Send, Sparkles, X } from "lucide-react";
-import {
-  activities, demoGuest, diningVenues, facilities, formatINR, getRoom, languages, quickActionKeys, resort, rooms, t,
-  type Language, type QuickKey,
-} from "@/data/resort";
+import { MessageCircle, Mountain, RotateCcw, X } from "lucide-react";
+import { languages, quickActionKeys, t, type Language } from "@/data/resort";
 import { useAuth } from "@/lib/auth";
-import { useStore } from "@/lib/store";
-
-interface Msg { from: "bot" | "user"; text: string; link?: { to: "/rooms" | "/concierge" | "/activities" | "/dashboard"; label: string } }
+import { Button } from "@/components/ui/button";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputFooter,
+  PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import type { AssistantMessage } from "@/lib/assistant-contract";
 
 export function AssistantWidget({ openSignal = 0 }: { openSignal?: number }) {
   const { user } = useAuth();
-  const { bookings } = useStore();
   const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<Language>("English");
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const end = useRef<HTMLDivElement>(null);
+  const [msgs, setMsgs] = useState<AssistantMessage[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState<AssistantMessage[] | null>(null);
+  const abort = useRef<AbortController | null>(null);
   const tr = t(lang);
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
+  useEffect(() => {
+    abort.current?.abort();
+    setMsgs([]);
+    setError("");
+    setRetry(null);
+  }, [user?.id]);
+  useEffect(() => () => abort.current?.abort(), []);
 
-  useEffect(() => { if (openSignal > 0) setOpen(true); }, [openSignal]);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, open]);
-
-  const answer = (key: QuickKey): Msg => {
-    switch (key) {
-      case "room":
-        return { from: "bot", text: "Our stays:\n" + rooms.map((r) => `• ${r.name} — ${formatINR(r.price)}/night, up to ${r.capacity} guests`).join("\n"), link: { to: "/rooms", label: "Browse Rooms & Villas" } };
-      case "plan":
-        return { from: "bot", text: "Tell our AI Travel Concierge your dates, budget and interests and it will recommend a room, activities and dining.", link: { to: "/concierge", label: "Open AI Concierge" } };
-      case "activities":
-        return { from: "bot", text: "Popular experiences:\n" + activities.slice(0, 4).map((a) => `• ${a.name} (${a.duration}, ${a.difficulty})`).join("\n"), link: { to: "/activities", label: "See all activities" } };
-      case "facilities":
-        return { from: "bot", text: facilities.map((f) => `• ${f.name} — ${f.hours}`).join("\n") };
-      case "dining":
-        return { from: "bot", text: diningVenues.map((d) => `• ${d.name} (${d.cuisine}) — ${d.hours}`).join("\n") };
-      case "booking": {
-        if (!user) return { from: "bot", text: "Sign in to view your private booking information.", link: { to: "/dashboard", label: "Sign in to Dashboard" } };
-        const mine = bookings.filter((b) => b.guestId === user.id);
-        if (!mine.length) return { from: "bot", text: "You don't have any bookings yet.", link: { to: "/rooms", label: "Browse Rooms" } };
-        return { from: "bot", text: mine.map((b) => `• ${b.id}: ${getRoom(b.roomId)?.name}, ${b.checkIn} → ${b.checkOut} — ${b.status}, ${b.payment}`).join("\n"), link: { to: "/dashboard", label: "Open Dashboard" } };
+  const requestAnswer = async (history: AssistantMessage[]) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setRetry(null);
+    setMsgs([...history, { role: "model", text: "" }]);
+    const controller = new AbortController();
+    abort.current = controller;
+    try {
+      const response = await fetch("/api/public/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({ language: lang, messages: history.slice(-19) }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || `Assistant unavailable (HTTP ${response.status}).`);
       }
-      case "support":
-        return { from: "bot", text: `Guest support is available 24/7.\nPhone: ${resort.phone}\nEmail: ${resort.email}\nCheck-in ${resort.checkInTime}, check-out ${resort.checkOutTime}. You can also use the “How Can We Help You?” form below.` };
+      if (!response.body) throw new Error("No answer was received.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+      let completed = false;
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          buffer += decoder.decode(value, { stream: !done });
+          let pos;
+          while ((pos = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, pos);
+            buffer = buffer.slice(pos + 1);
+            if (!line.trim()) continue;
+            const event = JSON.parse(line);
+            if (event.error) throw new Error(event.error);
+            if (event.text) {
+              answer += event.text;
+              setMsgs([...history, { role: "model", text: answer }]);
+            }
+            if (event.done) completed = true;
+          }
+          if (done) break;
+        }
+        if (!completed) throw new Error("The answer was interrupted. Please retry.");
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (failure) {
+      if (controller.signal.aborted) setError("Answer stopped.");
+      else {
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "The assistant is unavailable. Please retry.",
+        );
+        setRetry(history);
+      }
+    } finally {
+      setBusy(false);
     }
   };
-
-  const ask = (key: QuickKey) => setMsgs((m) => [...m, { from: "user", text: tr.actions[key] }, answer(key)]);
-
-  const send = () => {
-    const q = input.trim();
-    if (!q) return;
-    const l = q.toLowerCase();
-    const key: QuickKey | null =
-      /room|villa|suite|stay|price|treehouse/.test(l) ? "room"
-      : /plan|recommend|itinerar/.test(l) ? "plan"
-      : /trek|hike|activit|yoga|zip|tour/.test(l) ? "activities"
-      : /pool|spa|gym|facilit|wifi|transfer/.test(l) ? "facilities"
-      : /food|dining|restaurant|eat|breakfast|dinner/.test(l) ? "dining"
-      : /booking|reservation|my stay/.test(l) ? "booking"
-      : /help|support|contact|phone|check/.test(l) ? "support"
-      : null;
-    setMsgs((m) => [...m, { from: "user", text: q }, key ? answer(key) : { from: "bot", text: "I can help with rooms, stay planning, activities, facilities, dining, your booking or guest support. Try one of the quick actions." }]);
+  const send = (text: string) => {
+    const question = text.trim();
+    if (!question || busy) return;
     setInput("");
+    return requestAnswer([...msgs.filter((m) => m.text), { role: "user", text: question }]);
   };
-
   return (
     <>
       {!open && (
-        <button onClick={() => setOpen(true)} className="btn btn-primary fixed bottom-5 right-5 z-40 !px-5 !py-3.5 shadow-card" aria-label="Open AI Guest Assistant">
-          <MessageCircle className="h-5 w-5" /> <span className="hidden sm:inline">Ask AI Assistant</span>
-        </button>
+        <Button
+          onClick={() => setOpen(true)}
+          className="btn btn-primary fixed bottom-5 right-5 z-40 !px-5 !py-3.5 shadow-card"
+          aria-label="Open AI Guest Assistant"
+        >
+          <MessageCircle />
+          <span className="hidden sm:inline">Ask AI Assistant</span>
+        </Button>
       )}
       {open && (
-        <div role="dialog" aria-label="AI Guest Assistant" className="fixed inset-x-3 bottom-3 z-50 flex max-h-[80vh] flex-col overflow-hidden rounded-2xl border bg-card shadow-card sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px]">
+        <div
+          role="dialog"
+          aria-label="AI Guest Assistant"
+          className="fixed inset-x-3 bottom-3 z-50 flex h-[min(620px,80dvh)] flex-col overflow-hidden rounded-2xl border bg-card shadow-card sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px]"
+        >
           <div className="flex items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
-            <div className="flex min-w-0 items-center gap-2"><Sparkles className="h-4 w-4 shrink-0" /><span className="truncate font-semibold">{tr.title}</span></div>
-            <div className="flex shrink-0 items-center gap-2">
-              <select aria-label="Assistant language" value={lang} onChange={(e) => setLang(e.target.value as Language)} className="rounded-md bg-primary-foreground/15 px-2 py-1 text-xs text-primary-foreground">
-                {languages.map((l) => <option key={l} value={l} className="text-foreground">{l}</option>)}
+            <div className="flex min-w-0 items-center gap-2">
+              <Mountain className="h-4 w-4 shrink-0" />
+              <span className="truncate font-semibold">{tr.title}</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <select
+                aria-label="Assistant language"
+                value={lang}
+                onChange={(e) => setLang(e.target.value as Language)}
+                className="max-w-24 rounded-md bg-primary-foreground/15 px-1 py-1 text-xs text-primary-foreground"
+              >
+                {languages.map((l) => (
+                  <option key={l} className="text-foreground">
+                    {l}
+                  </option>
+                ))}
               </select>
-              <button onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-full p-1 hover:bg-primary-foreground/15"><X className="h-4 w-4" /></button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(false)}
+                aria-label="Close assistant"
+              >
+                <X />
+              </Button>
             </div>
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-            <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2.5">{tr.greeting}</div>
-            <div className="flex flex-wrap gap-1.5">
-              {quickActionKeys.map((k) => (
-                <button key={k} onClick={() => ask(k)} className="rounded-full border bg-card px-3 py-1.5 text-xs font-medium hover:bg-muted">{tr.actions[k]}</button>
-              ))}
-            </div>
-            {msgs.map((m, i) => (
-              <div key={i} className={m.from === "user" ? "ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2.5 text-primary-foreground" : "max-w-[90%] rounded-2xl rounded-tl-sm bg-secondary px-3.5 py-2.5"}>
-                <p className="whitespace-pre-line">{m.text}</p>
-                {m.link && <Link to={m.link.to} className="mt-2 inline-block text-xs font-semibold text-primary underline">{m.link.label} →</Link>}
+          <Conversation className="min-h-0">
+            <ConversationContent className="gap-4 text-sm">
+              <p>{tr.greeting}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {quickActionKeys.map((k) => (
+                  <Button
+                    key={k}
+                    variant="outline"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => send(tr.actions[k])}
+                  >
+                    {tr.actions[k]}
+                  </Button>
+                ))}
               </div>
-            ))}
-            {lang !== "English" && msgs.length > 0 && <p className="text-[11px] text-muted-foreground">Detailed answers are shown in English (translation unavailable).</p>}
-            <div ref={end} />
+              {msgs.map(
+                (m, i) =>
+                  m.text && (
+                    <Message key={i} from={m.role === "model" ? "assistant" : "user"}>
+                      <MessageContent
+                        className={m.role === "user" ? "!bg-primary !text-primary-foreground" : ""}
+                      >
+                        <MessageResponse>{m.text}</MessageResponse>
+                      </MessageContent>
+                    </Message>
+                  ),
+              )}
+              {busy && (
+                <div role="status">
+                  <Shimmer>Thinking…</Shimmer>
+                </div>
+              )}
+              {error && (
+                <div role="alert" className="space-y-2 text-destructive">
+                  <p>{error}</p>
+                  {retry && (
+                    <Button variant="outline" size="sm" onClick={() => requestAnswer(retry)}>
+                      <RotateCcw />
+                      Retry
+                    </Button>
+                  )}
+                </div>
+              )}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
+          <div className="border-t p-3">
+            <PromptInput onSubmit={({ text }) => send(text)}>
+              <PromptInputTextarea
+                aria-label={tr.placeholder}
+                placeholder={tr.placeholder}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                maxLength={4000}
+                disabled={busy}
+              />
+              <PromptInputFooter className="justify-end">
+                <PromptInputSubmit
+                  aria-label={busy ? "Stop answer" : tr.send}
+                  status={busy ? "streaming" : "ready"}
+                  disabled={!busy && !input.trim()}
+                  onStop={() => abort.current?.abort()}
+                />
+              </PromptInputFooter>
+            </PromptInput>
           </div>
-          <form className="flex gap-2 border-t p-3" onSubmit={(e) => { e.preventDefault(); send(); }}>
-            <input aria-label={tr.placeholder} value={input} onChange={(e) => setInput(e.target.value)} placeholder={tr.placeholder} className="field" />
-            <button type="submit" className="btn btn-primary !px-3" aria-label={tr.send}><Send className="h-4 w-4" /></button>
-          </form>
         </div>
       )}
     </>
