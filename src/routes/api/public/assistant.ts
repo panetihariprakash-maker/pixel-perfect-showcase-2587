@@ -7,6 +7,14 @@ import {
 import { activities, diningVenues, facilities, resort, rooms } from "@/data/resort";
 import { guestFaqs, policySections } from "@/data/guest-information";
 
+// Recoverable provider/configuration failures are chat protocol events, just
+// like failures after streaming begins. Keep them out of the page error path.
+function assistantFailure(error: string, providerStatus?: number) {
+  return new Response(JSON.stringify({ error, providerStatus, done: true }) + "\n", {
+    headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+  });
+}
+
 export const Route = createFileRoute("/api/public/assistant")({
   server: {
     handlers: {
@@ -22,12 +30,8 @@ export const Route = createFileRoute("/api/public/assistant")({
           );
         const key = process.env["GEMINI_API_KEY"];
         if (!key)
-          return Response.json(
-            {
-              error:
-                "The AI assistant is unavailable: Google AI Studio credentials need configuration.",
-            },
-            { status: 503 },
+          return assistantFailure(
+            "The AI assistant is unavailable: Google AI Studio credentials need configuration.",
           );
         const model = process.env["GEMINI_MODEL"] || "gemini-3.5-flash";
         const catalogue = {
@@ -47,9 +51,8 @@ export const Route = createFileRoute("/api/public/assistant")({
           const publicKey = process.env["SUPABASE_PUBLISHABLE_KEY"];
           if (!databaseUrl || !publicKey) {
             request.signal.removeEventListener("abort", stopGeneration);
-            return Response.json(
-              { error: "The assistant's public property catalogue needs backend configuration." },
-              { status: 503 },
+            return assistantFailure(
+              "The assistant's public property catalogue needs backend configuration.",
             );
           }
           // Anonymous public RPC only: never use the service client or guest token.
@@ -61,9 +64,9 @@ export const Route = createFileRoute("/api/public/assistant")({
           });
           if (!listingsResponse.ok) {
             request.signal.removeEventListener("abort", stopGeneration);
-            return Response.json(
-              { error: "Unable to read approved public properties. Please try again later." },
-              { status: 503 },
+            return assistantFailure(
+              "Unable to read approved public properties. Please try again later.",
+              listingsResponse.status,
             );
           }
           const publicListings = publicAssistantListingsSchema.parse(await listingsResponse.json());
@@ -90,15 +93,12 @@ export const Route = createFileRoute("/api/public/assistant")({
           );
           if (!upstream.ok || !upstream.body) {
             request.signal.removeEventListener("abort", stopGeneration);
-            console.error("Gemini request failed", upstream.status);
+            console.warn("Gemini request unavailable", upstream.status);
             const message =
               upstream.status === 429
                 ? "Gemini usage limit reached. Try again later or check Google AI Studio billing."
                 : `Gemini is unavailable (HTTP ${upstream.status}). Check the API key, model access and Google AI Studio configuration.`;
-            return Response.json(
-              { error: message },
-              { status: upstream.status >= 400 ? upstream.status : 502 },
-            );
+            return assistantFailure(message, upstream.status);
           }
           const encoder = new TextEncoder();
           const reader = upstream.body.getReader();
@@ -172,10 +172,7 @@ export const Route = createFileRoute("/api/public/assistant")({
               error.name === "AbortError")
           )
             return new Response(null, { status: 499 });
-          return Response.json(
-            { error: "Could not reach Gemini. Please try again later." },
-            { status: 502 },
-          );
+          return assistantFailure("Could not reach Gemini. Please try again later.");
         }
       },
     },

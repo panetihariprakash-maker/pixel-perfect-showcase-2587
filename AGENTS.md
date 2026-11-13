@@ -32,3 +32,4 @@
 - Property reassignment is blocked until a transaction can transfer dependent reservations and media safely; draft photo removal only changes metadata so Cancel preserves stored photos.
 - Partner guest requests reuse owner_reservations through authenticated, narrowly scoped database functions; guests never read owner notes or identifiers, and database pricing remains authoritative.
 - Public inventory exposes aggregate unit counts only; guest dashboard counts are private requests plus approved catalogue inventory, never sample operational statistics.
+- Recoverable assistant outages use explicit NDJSON error events before or during streaming; HTTP validation/auth failures remain non-success responses so outages do not trigger page-level crash handling.

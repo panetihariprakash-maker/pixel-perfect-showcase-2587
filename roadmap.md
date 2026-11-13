@@ -2,7 +2,7 @@
 - [x] Apply Week 2 navy/teal/gold design consistently without replacing screens or assets.
 - [x] Connect approved database rooms to guest booking requests and private dashboard readback; preserve sample stays.
 - [x] Verify booking validation/persistence, live inventory summaries, Gemini failure/retry and desktop/mobile flows; write Week 2 report.
-- [ ] Demonstrate successful current Gemini generation (Google returned service error 503 and quota error 429; requires provider recovery/quota).
+- [x] Verify current Gemini generation and contain provider outages within chat; live text responses and controlled outage/retry passed.
 - [ ] Connect Python outputs if required (no existing Python service endpoint or contract supplied).
 - [x] Audit five Week 1 areas; add guest/owner validation, seasonal totals, safe photo editing and owner controls.
 - [x] Ground Gemini in approved public database listings without private guest access and verify real streaming.

@@ -73,7 +73,30 @@ describe("Assistant cancellation", () => {
     if (typeof handler !== "function") throw new Error("Assistant handler missing");
     const response = await handler({ request: request() } as Parameters<typeof handler>[0]);
     if (!(response instanceof Response)) throw new Error("Expected HTTP response");
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
+    expect(JSON.parse(await response.text()).error).toContain("Unable to read");
     expect(fetchMock).toHaveBeenCalledOnce();
   });
+  it.each([503, 429])(
+    "delivers provider %s as an explicit chat failure, not a page failure",
+    async (status) => {
+      vi.stubEnv("GEMINI_API_KEY", "test-only-key");
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(Response.json([]))
+          .mockResolvedValueOnce(new Response(null, { status })),
+      );
+      if (typeof handler !== "function") throw new Error("Assistant handler missing");
+      const response = await handler({ request: request() } as Parameters<typeof handler>[0]);
+      if (!(response instanceof Response)) throw new Error("Expected HTTP response");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/x-ndjson");
+      const event = JSON.parse(await response.text());
+      expect(event.providerStatus).toBe(status);
+      expect(event.error.length).toBeGreaterThan(0);
+      expect(event).not.toHaveProperty("text");
+    },
+  );
 });

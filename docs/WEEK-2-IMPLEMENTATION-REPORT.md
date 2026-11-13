@@ -41,12 +41,12 @@ Dates, bounded contacts and integer guest counts are validated in the client and
 
 The existing same-origin `/api/public/assistant` streams Google Gemini with server-only credentials, central sample facts, policy information and anonymously projected public database listings. Loading, Stop, error and explicit Retry remain. The assistant cannot read or modify private reservations.
 
-**Current live verification:** Google returned HTTP 503, then HTTP 429 on explicit retry. The UI correctly displayed service/usage-limit failures without generating fake answers. Successful live generation was verified in Week 1 but could not be reverified during this pass. Check Google AI Studio quota/billing and service availability; no credentials were replaced or exposed.
+**Current live verification:** Google initially returned HTTP 503, then HTTP 429 on explicit retry. Subsequent live checks returned HTTP 200 with genuine streamed text. Recoverable provider/configuration failures now use explicit NDJSON error events rather than page-level failing HTTP responses; validation/auth errors still retain their HTTP error status. Controlled outage/retry preserved Home and recovered without runtime errors. Provider quotas/service availability can still interrupt answers; no credentials were replaced or exposed.
 
 ## 6. API integrations
 
 - Working: database/Auth operations, approved catalogue reads, guest requests/readback/cancellation, existing owner/admin queries and signed-photo integration.
-- Configured but currently rate/service limited: Google Gemini.
+- Working on subsequent live checks: Google Gemini; transient service/quota errors remain explicitly handled.
 - No Python source, Python dependency manifest or configured Python endpoint was found; no endpoint was invented. Provide an existing service URL and contract if Python output is required.
 - Live payment remains unconfigured and no money is collected.
 
@@ -61,7 +61,7 @@ The existing same-origin `/api/public/assistant` streams Google Gemini with serv
 ## 8. Pending configuration and limits
 
 - No production approved partner properties currently exist. An authorized Super Admin must approve genuine owner/property records; no permanent sample listings were inserted.
-- Gemini service/quota must recover before a successful current AI answer can be demonstrated.
+- Gemini provider quota/service fluctuations can still prevent an answer; they now remain inside chat, without page-level crash handling.
 - Python endpoint/contract is absent.
 - Live payments, verified official resort contacts/policies, real-inbox email recovery/confirmation and full Google consent remain outside what was verified.
 - Front Desk and Operations remain clearly disclosed local demonstrations, not a shared operational integration.
