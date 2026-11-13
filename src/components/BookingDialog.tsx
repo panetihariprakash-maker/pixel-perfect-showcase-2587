@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, CreditCard } from "lucide-react";
@@ -21,6 +21,7 @@ import {
   partnerStaySchema,
   type PublicListing,
   type PublicRoom,
+  useRoomQuote,
 } from "@/lib/partner";
 import { stayAmount } from "@/lib/owner";
 
@@ -42,6 +43,7 @@ export function BookingDialog({
   const queryClient = useQueryClient();
   const selectedRoom = partner?.room ?? room;
   const [partnerReference, setPartnerReference] = useState("");
+  const submitting = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const { addBooking } = useStore();
@@ -57,6 +59,7 @@ export function BookingDialog({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<Booking | null>(null);
+  const quote = useRoomQuote(partner?.room.id, f.checkIn, f.checkOut);
   const { data: profile } = useQuery({
     queryKey: ["guest-profile", user?.id],
     enabled: !!user,
@@ -83,7 +86,7 @@ export function BookingDialog({
   if (!selectedRoom) return null;
   const nights = nightsBetween(f.checkIn, f.checkOut);
   const total = partner
-    ? stayAmount(partner.room, f.checkIn, f.checkOut)
+    ? (quote.data?.amount ?? stayAmount(partner.room, f.checkIn, f.checkOut))
     : nights > 0
       ? nights * selectedRoom.price
       : 0;
@@ -115,7 +118,7 @@ export function BookingDialog({
   };
 
   const confirm = async () => {
-    if (saving) return;
+    if (submitting.current || partnerReference) return;
     if (!validate1() || !validate2()) {
       setStep(1);
       return;
@@ -124,6 +127,11 @@ export function BookingDialog({
       setSaveError("Please sign in before saving a booking.");
       return;
     }
+    if (partner && (!quote.data?.available || quote.isFetching || quote.error)) {
+      setSaveError("Please check room availability before submitting.");
+      return;
+    }
+    submitting.current = true;
     setSaving(true);
     setSaveError("");
     const b: Booking = {
@@ -179,6 +187,7 @@ export function BookingDialog({
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save booking.");
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   };
@@ -193,6 +202,16 @@ export function BookingDialog({
         <p role="alert" className="mb-4 text-sm text-destructive">
           {saveError}
         </p>
+      )}
+      {partnerReference && !created && (
+        <div className="mb-4 border-l-4 border-secondary p-3">
+          <p className="break-all text-sm">Saved reference: {partnerReference}</p>
+          <Button asChild variant="link">
+            <Link to="/dashboard" hash="my-bookings" onClick={onClose}>
+              Open My Bookings
+            </Link>
+          </Button>
+        </div>
       )}
       <ol className="mb-6 flex gap-1" aria-label="Booking steps">
         {stepNames.map((n, i) => (
@@ -249,8 +268,46 @@ export function BookingDialog({
               aria-invalid={!!errors.guests}
             />
           </Field>
+          {partner && (
+            <div className="rounded-lg border bg-muted/40 p-4" aria-live="polite">
+              {quote.isFetching ? (
+                <p role="status" className="text-sm">
+                  Checking availability and price…
+                </p>
+              ) : quote.error ? (
+                <>
+                  <p role="alert" className="text-sm text-destructive">
+                    Unable to check this room for your dates.
+                  </p>
+                  <Button variant="outline" onClick={() => quote.refetch()}>
+                    Check again
+                  </Button>
+                </>
+              ) : quote.data ? (
+                <>
+                  <p className="text-sm font-semibold">
+                    {quote.data.available
+                      ? `${quote.data.remaining_units} unit${quote.data.remaining_units === 1 ? "" : "s"} available for these dates`
+                      : "No units available for these dates"}
+                  </p>
+                  <p className="mt-1 text-sm">
+                    {quote.data.nights} nights · {formatINR(quote.data.amount)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Choose valid dates to check this room.
+                </p>
+              )}
+            </div>
+          )}
           <div className="flex justify-end">
-            <Button onClick={() => validate1() && setStep(2)}>Continue</Button>
+            <Button
+              disabled={!!partner && (quote.isFetching || !quote.data?.available || !!quote.error)}
+              onClick={() => validate1() && setStep(2)}
+            >
+              Continue
+            </Button>
           </div>
         </div>
       )}
@@ -337,12 +394,20 @@ export function BookingDialog({
             </div>
           </dl>
           <p className="text-xs text-muted-foreground">
-            {formatINR(selectedRoom.price)} × {nights} night{nights > 1 ? "s" : ""} ={" "}
-            {formatINR(total)}{" "}
             {partner
-              ? "(estimate; seasonal rates and discounts included)"
-              : "(taxes excluded in demo)"}
+              ? `Total for ${nights} nights: ${formatINR(total)} (seasonal rates and discounts included)`
+              : `${formatINR(selectedRoom.price)} × ${nights} nights = ${formatINR(total)} (taxes excluded in demo)`}
           </p>
+          {partner && quote.data && (
+            <ul className="divide-y text-sm">
+              {quote.data.nightly_rates.map((night) => (
+                <li key={night.date} className="flex justify-between py-2">
+                  <span>{night.date}</span>
+                  <strong>{formatINR(night.amount)}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(2)}>
               Back
@@ -374,7 +439,11 @@ export function BookingDialog({
             <Button
               className="btn btn-accent"
               onClick={confirm}
-              disabled={saving || !!partnerReference}
+              disabled={
+                saving ||
+                !!partnerReference ||
+                (!!partner && (quote.isFetching || !quote.data?.available || !!quote.error))
+              }
             >
               {saving ? "Saving…" : partner ? "Submit booking request" : "Save booking (test mode)"}
             </Button>

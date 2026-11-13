@@ -24,6 +24,15 @@ describe("Week 2 partner requests", () => {
   it("requires an integer guest count", () => {
     expect(partnerRequestSchema.safeParse({ ...input, _guests: 1.5 }).success).toBe(false);
   });
+  it("rejects nonexistent calendar dates", () => {
+    expect(
+      partnerRequestSchema.safeParse({
+        ...input,
+        _check_in: "2099-02-30",
+        _check_out: "2099-03-03",
+      }).success,
+    ).toBe(false);
+  });
   it("counts only open physical units and subtracts occupied units", () => {
     const listings = [
       {

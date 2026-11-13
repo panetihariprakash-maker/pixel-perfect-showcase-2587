@@ -45,6 +45,50 @@ export const partnerStaySchema = z.object({
   created_at: z.string(),
 });
 export type PartnerStay = z.infer<typeof partnerStaySchema>;
+export const quoteSchema = z.object({
+  room_id: z.string().uuid(),
+  check_in: z.string(),
+  check_out: z.string(),
+  nights: z.number(),
+  capacity: z.number(),
+  remaining_units: z.number(),
+  available: z.boolean(),
+  amount: z.number(),
+  nightly_rates: z.array(z.object({ date: z.string(), amount: z.number() })),
+});
+export function useRoomQuote(roomId: string | undefined, checkIn: string, checkOut: string) {
+  const datesValid = validStayDates(checkIn, checkOut);
+  return useQuery({
+    queryKey: ["partner-room-quote", roomId, checkIn, checkOut],
+    enabled: !!roomId && datesValid,
+    retry: false,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      if (!roomId) throw new Error("Choose a room.");
+      const { data, error } = await supabase.rpc("partner_room_quote", {
+        _room_id: roomId,
+        _check_in: checkIn,
+        _check_out: checkOut,
+      });
+      if (error) throw error;
+      return quoteSchema.parse(data);
+    },
+  });
+}
+export function validStayDates(checkIn: string, checkOut: string) {
+  const exact = (date: string) => {
+    const time = Date.parse(date + "T00:00:00Z");
+    return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === date;
+  };
+  const nights = (Date.parse(checkOut) - Date.parse(checkIn)) / 86400000;
+  return (
+    exact(checkIn) &&
+    exact(checkOut) &&
+    nights >= 1 &&
+    nights <= 90 &&
+    checkIn >= new Date().toISOString().slice(0, 10)
+  );
+}
 export const partnerRequestSchema = z
   .object({
     _room_id: z.string().uuid(),
@@ -57,8 +101,7 @@ export const partnerRequestSchema = z
     _requests: z.string().max(2000),
   })
   .refine((v) => {
-    const nights = (Date.parse(v._check_out) - Date.parse(v._check_in)) / 86400000;
-    return nights >= 1 && nights <= 90 && v._check_in >= new Date().toISOString().slice(0, 10);
+    return validStayDates(v._check_in, v._check_out);
   }, "Choose a future stay of 1 to 90 nights.");
 
 export function usePublicListings() {

@@ -122,8 +122,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loaded)
-      localStorage.setItem(KEY, JSON.stringify({ units: state.units, tasks: state.tasks }));
+    if (loaded) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ units: state.units, tasks: state.tasks }));
+      } catch {
+        /* Keep the sample operations usable when browser storage is blocked/full. */
+      }
+    }
   }, [state, loaded]);
 
   useEffect(() => {

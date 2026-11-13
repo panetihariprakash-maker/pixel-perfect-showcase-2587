@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION public.guard_room_reservation_integrity() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE peak integer; BEGIN
+IF new.property_id IS DISTINCT FROM old.property_id OR new.owner_id IS DISTINCT FROM old.owner_id THEN RAISE EXCEPTION 'Room reassignment requires a dedicated transfer workflow'; END IF;
+IF new.capacity<old.capacity AND EXISTS(SELECT 1 FROM public.owner_reservations b WHERE b.room_id=old.id AND b.status IN ('Requested','Confirmed','Checked In') AND b.check_out>current_date AND b.guests>new.capacity) THEN RAISE EXCEPTION 'Capacity cannot be reduced below active reservation guest counts'; END IF;
+IF new.units<old.units THEN SELECT coalesce(max(x.booked),0) INTO peak FROM (SELECT count(*) AS booked FROM public.owner_reservations b CROSS JOIN LATERAL generate_series(greatest(b.check_in,current_date)::timestamp,(b.check_out-1)::timestamp,interval '1 day') d WHERE b.room_id=old.id AND b.status IN ('Confirmed','Checked In') AND b.check_out>current_date GROUP BY d) x; IF new.units<peak THEN RAISE EXCEPTION 'Units cannot be reduced below accepted reservation occupancy'; END IF; END IF;
+RETURN new; END $$;
+REVOKE ALL ON FUNCTION public.guard_room_reservation_integrity() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER guard_room_reservation_integrity BEFORE UPDATE ON public.owner_rooms FOR EACH ROW EXECUTE FUNCTION public.guard_room_reservation_integrity();
+DROP POLICY room_owner_update ON public.owner_rooms;
+CREATE POLICY room_owner_update ON public.owner_rooms FOR UPDATE TO authenticated USING(owner_id=auth.uid() AND public.owner_can(auth.uid(),'edit') AND EXISTS(SELECT 1 FROM public.owner_properties p WHERE p.id=property_id AND p.status<>'Suspended')) WITH CHECK(owner_id=auth.uid() AND public.owner_can(auth.uid(),'edit') AND EXISTS(SELECT 1 FROM public.owner_properties p WHERE p.id=property_id AND p.owner_id=auth.uid() AND p.status<>'Suspended'));
+DROP POLICY room_owner_delete ON public.owner_rooms;
+CREATE POLICY room_owner_delete ON public.owner_rooms FOR DELETE TO authenticated USING(owner_id=auth.uid() AND public.owner_can(auth.uid(),'remove') AND EXISTS(SELECT 1 FROM public.owner_properties p WHERE p.id=property_id AND p.status<>'Suspended'));

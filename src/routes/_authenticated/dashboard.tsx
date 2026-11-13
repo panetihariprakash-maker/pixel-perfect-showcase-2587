@@ -221,11 +221,19 @@ function Dashboard() {
                 <h2 id="my-bookings-h" className="mb-4 text-3xl font-semibold">
                   My Bookings
                 </h2>
-                {mine.length === 0 ? (
-                  <EmptyState title="You don't have any bookings yet.">
-                    <a href="#rooms" className="btn btn-primary">
+                {bookingsLoading ? (
+                  <p role="status" className="text-sm text-muted-foreground">
+                    Loading your saved stays…
+                  </p>
+                ) : dataError ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Your saved stays could not be loaded. Refresh to try again.
+                  </p>
+                ) : mine.length === 0 ? (
+                  <EmptyState title="No sample-stay requests yet.">
+                    <Link to="/dashboard" hash="rooms" className="btn btn-primary">
                       Browse Rooms & Villas
-                    </a>
+                    </Link>
                   </EmptyState>
                 ) : (
                   <div className="space-y-6">

@@ -65,7 +65,7 @@ src/
   start.ts                  Auth bearer, error and CSRF middleware
   server.ts                 Server error wrapper
   test/                     Existing and new tests
-drizzle/migrations/          Eleven ordered SQL migrations and their metadata
+drizzle/migrations/          Thirteen ordered SQL migrations and their metadata
 public/                      Favicon and robots configuration
 ```
 
@@ -88,7 +88,7 @@ The project uses its existing Lovable Cloud backend, not an independently connec
 | `platform_settings`   | Admin-controlled platform configuration                                                     |
 | `admin_audit_log`     | Trigger-created audit history                                                               |
 
-The eleven SQL files under `drizzle/migrations/` are the schema source of truth. `drizzle/schema.ts` is intentionally a blank placeholder, not an ORM model. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant reads approved partner facts anonymously and strips unexpected fields; it never reads private guest records. The current public partner catalogue is empty.
+The thirteen SQL files under `drizzle/migrations/` are the schema source of truth. `drizzle/schema.ts` is intentionally a blank placeholder, not an ORM model. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant reads approved partner facts anonymously and strips unexpected fields; it never reads private guest records. The current public partner catalogue is empty.
 
 For a separate deployment, apply the SQL files in journal order using a migration administrator and preserve grants/policies/triggers. Provision `listing-photos` separately as private storage with a 10 MB limit; storage bucket provisioning is not in the SQL chain. Never generate models from the blank Drizzle placeholder or blindly replay applied migrations. In Lovable, use the managed migration workflow. New triggers validate guest amounts/dates/capacity, saved array shapes and owner reservation ownership/pricing/units; unsafe partial property transfer is blocked.
 
@@ -155,3 +155,7 @@ Latest browser verification used temporary confirmed accounts: login/refresh, ed
 ## Week 2 update
 
 See [Week 2 implementation report](docs/WEEK-2-IMPLEMENTATION-REPORT.md) for the shared navy/teal/gold refresh, SQL-backed partner booking flow, private guest readback/cancellation, inventory summaries, 46 passing tests and current Gemini service/quota limitations. No duplicate tables or replacement architecture were introduced.
+
+## Week 3 / Team V1
+
+[Phase 1 report](docs/WEEK-3-PHASE-1-REPORT.md) records the real date-specific quote API, partner room details, duplicate protection, owner integrity fixes and 53 passing tests. [Team V1 demo](docs/TEAM-V1-DEMO.md) provides a truthful presentation sequence and configuration checklist. API output satisfies the Python-or-API requirement; no Python service was added.

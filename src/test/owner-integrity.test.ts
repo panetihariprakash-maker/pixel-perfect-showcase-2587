@@ -220,6 +220,17 @@ describe.skipIf(!ready)("Owner reservation integrity", () => {
     });
     expect(res.ok).toBe(true);
     const id = await res.json();
+    const duplicate = await call("/rest/v1/rpc/request_partner_stay", guest.token, "POST", {
+      _room_id: room,
+      _check_in: "2026-12-25",
+      _check_out: "2026-12-27",
+      _guests: 2,
+      _name: "QA Guest",
+      _email: "qa@example.com",
+      _phone: "9876543210",
+      _requests: "Guest request",
+    });
+    expect(duplicate.ok).toBe(false);
     const read = await call("/rest/v1/rpc/my_partner_stays", guest.token, "POST", {});
     const rows = await read.json();
     const saved = rows.find((r: { id: string }) => r.id === id);
@@ -247,5 +258,65 @@ describe.skipIf(!ready)("Owner reservation integrity", () => {
       guest_user_id: guest.id,
     });
     expect(res.ok).toBe(false);
+  });
+  it("returns real anonymous availability and seasonal prices without guest data", async () => {
+    const response = await fetch(`${url}/rest/v1/rpc/partner_room_quote`, {
+      method: "POST",
+      headers: { apikey: key ?? "", "Content-Type": "application/json" },
+      body: JSON.stringify({ _room_id: room, _check_in: "2026-12-19", _check_out: "2026-12-21" }),
+    });
+    expect(response.ok).toBe(true);
+    const quote = await response.json();
+    expect(quote.amount).toBe(22500);
+    expect(quote.remaining_units).toBe(0);
+    expect(quote.available).toBe(false);
+    expect(quote.nightly_rates).toEqual([
+      { date: "2026-12-19", amount: 9000 },
+      { date: "2026-12-20", amount: 13500 },
+    ]);
+    expect(quote).not.toHaveProperty("guest_name");
+    expect(quote).not.toHaveProperty("owner_id");
+  });
+  it("rejects room capacity below active bookings", async () => {
+    const owner = accounts[0];
+    if (!owner) throw new Error("Test owner missing");
+    const res = await call(`/rest/v1/owner_rooms?id=eq.${room}`, owner.token, "PATCH", {
+      capacity: 1,
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("rejects reducing units below accepted overlapping stays", async () => {
+    const owner = accounts[0];
+    if (!owner) throw new Error("Test owner missing");
+    const res = await call(`/rest/v1/owner_rooms?id=eq.${room}`, owner.token, "PATCH", {
+      units: 0,
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("denies room changes and deletion under a suspended property", async () => {
+    const owner = accounts[0];
+    if (!owner || !admin) throw new Error("Test owner missing");
+    const suspend = await call(
+      `/rest/v1/owner_properties?id=eq.${property}`,
+      admin,
+      "PATCH",
+      { status: "Suspended" },
+      true,
+    );
+    expect(suspend.ok).toBe(true);
+    const update = await call(`/rest/v1/owner_rooms?id=eq.${room}`, owner.token, "PATCH", {
+      name: "Forbidden change",
+    });
+    expect(await update.json()).toEqual([]);
+    const remove = await call(`/rest/v1/owner_rooms?id=eq.${room}`, owner.token, "DELETE");
+    expect(await remove.json()).toEqual([]);
+    const restore = await call(
+      `/rest/v1/owner_properties?id=eq.${property}`,
+      admin,
+      "PATCH",
+      { status: "Approved" },
+      true,
+    );
+    expect(restore.ok).toBe(true);
   });
 });

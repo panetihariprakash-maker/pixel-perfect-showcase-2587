@@ -7,13 +7,17 @@ import { MapPin, Users } from "lucide-react";
 import { formatINR } from "@/data/resort";
 import { effectivePrice, useSignedUrls } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui-kit";
 
 /** Approved partner listings only; the database function never returns drafts, pending, rejected or suspended listings. */
 export function PartnerStays() {
   const { user } = useAuth();
   const listings = usePublicListings();
   const [booking, setBooking] = useState<{ listing: PublicListing; room: PublicRoom } | null>(null);
-  const covers = useSignedUrls((listings.data ?? []).map((l) => l.photos[0]).filter(Boolean));
+  const [detail, setDetail] = useState<{ listing: PublicListing; room: PublicRoom } | null>(null);
+  const covers = useSignedUrls(
+    (listings.data ?? []).flatMap((l) => [...l.photos, ...l.rooms.flatMap((r) => r.photos)]),
+  );
   if (listings.error)
     return (
       <section className="mx-auto max-w-7xl px-4 pb-8">
@@ -84,6 +88,13 @@ export function PartnerStays() {
                         <Users className="inline h-3.5 w-3.5" /> Up to {r.capacity} ·{" "}
                         {r.available && r.units > 0 ? "Open for requests" : "Unavailable"}
                       </p>
+                      <Button
+                        variant="outline"
+                        className="mr-2 mt-3"
+                        onClick={() => setDetail({ listing: l, room: r })}
+                      >
+                        Room details
+                      </Button>
                       {r.available &&
                         r.units > 0 &&
                         (user ? (
@@ -111,6 +122,76 @@ export function PartnerStays() {
           );
         })}
       </div>
+      <Modal
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        title={detail?.room.name ?? "Room details"}
+        wide
+      >
+        {detail && (
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {detail.listing.name} · {detail.room.room_type}
+            </p>
+            {covers.data?.[detail.room.photos[0] ?? detail.listing.photos[0]] && (
+              <img
+                className="mt-4 aspect-video w-full rounded-lg object-cover"
+                src={covers.data[detail.room.photos[0] ?? detail.listing.photos[0]] ?? undefined}
+                alt={detail.room.name}
+              />
+            )}
+            <p className="mt-4">{detail.room.description || detail.listing.description}</p>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted-foreground">Capacity</dt>
+                <dd>Up to {detail.room.capacity} guests</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Nightly rate</dt>
+                <dd>{formatINR(effectivePrice(detail.room))}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Check-in / Check-out</dt>
+                <dd>
+                  {detail.listing.check_in} / {detail.listing.check_out}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Availability</dt>
+                <dd>
+                  {detail.room.available && detail.room.units > 0
+                    ? "Open for requests; check your dates"
+                    : "Unavailable"}
+                </dd>
+              </div>
+            </dl>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {[...detail.listing.amenities, ...detail.room.facilities].map((f, i) => (
+                <li key={`${f}-${i}`} className="rounded bg-secondary/10 px-3 py-1 text-sm">
+                  {f}
+                </li>
+              ))}
+            </ul>
+            {detail.room.available &&
+              detail.room.units > 0 &&
+              (user ? (
+                <Button
+                  className="mt-6"
+                  onClick={() => {
+                    setBooking(detail);
+                    setDetail(null);
+                  }}
+                >
+                  Request booking
+                </Button>
+              ) : (
+                <Button asChild className="mt-6">
+                  <Link to="/auth">Sign in to book</Link>
+                </Button>
+              ))}
+          </div>
+        )}
+      </Modal>
       {booking && <BookingDialog room={null} partner={booking} onClose={() => setBooking(null)} />}
     </section>
   );

@@ -409,14 +409,19 @@ export function RoomsManager({
     const { error } = await supabase
       .from("owner_rooms")
       .update({ available: !r.available })
-      .eq("id", r.id);
+      .eq("id", r.id)
+      .select("id")
+      .single();
     if (error) setError(errMsg(error));
     else refresh();
   };
   const remove = async (r: OwnerRoom) => {
     if (!confirm(`Delete "${r.name}"?`)) return;
-    const { error } = await supabase.from("owner_rooms").delete().eq("id", r.id);
-    if (error) setError(errMsg(error));
+    const { data, error } = await supabase.from("owner_rooms").delete().eq("id", r.id).select("id");
+    if (error || data?.length !== 1)
+      setError(
+        error ? errMsg(error) : "Room was not removed. Refresh your permissions and try again.",
+      );
     else refresh();
   };
 
@@ -644,19 +649,33 @@ function RoomForm({
       available: f.available,
       photos: f.photos,
     };
-    const res = initial.id
-      ? await supabase.from("owner_rooms").update(row).eq("id", initial.id)
-      : await supabase.from("owner_rooms").insert({ ...row, owner_id: userId });
-    setSaving(false);
-    if (res.error) setError(errMsg(res.error));
-    else onSaved();
+    try {
+      const res = initial.id
+        ? await supabase.from("owner_rooms").update(row).eq("id", initial.id).select("id").single()
+        : await supabase
+            .from("owner_rooms")
+            .insert({ ...row, owner_id: userId })
+            .select("id")
+            .single();
+      if (res.error) setError(errMsg(res.error));
+      else onSaved();
+    } catch {
+      setError("Unable to save the room. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <Modal open onClose={onClose} title={initial.id ? "Edit room" : "Add room"} wide>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-medium">
           Property
-          <select className="field mt-1" value={f.property_id} onChange={set("property_id")}>
+          <select
+            disabled={!!initial.id}
+            className="field mt-1"
+            value={f.property_id}
+            onChange={set("property_id")}
+          >
             {properties.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}

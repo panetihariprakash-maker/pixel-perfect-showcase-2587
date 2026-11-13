@@ -529,6 +529,10 @@ export type Database = {
       my_partner_stays: { Args: never; Returns: Json }
       owner_applications_open: { Args: never; Returns: boolean }
       owner_can: { Args: { _perm: string; _user_id: string }; Returns: boolean }
+      partner_room_quote: {
+        Args: { _check_in: string; _check_out: string; _room_id: string }
+        Returns: Json
+      }
       platform_announcement: { Args: never; Returns: string }
       public_listings: { Args: never; Returns: Json }
       request_partner_stay: {

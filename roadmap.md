@@ -1,9 +1,11 @@
 # Azure Ridge update
+- [x] Complete Week 3 room details, date-specific API availability/pricing, duplicate request protection and booking history states.
+- [x] Verify Phase 1 guest booking flow, authorized owner/admin reads, Gemini, API results and responsive layouts; prepare demo and honest final report.
 - [x] Apply Week 2 navy/teal/gold design consistently without replacing screens or assets.
 - [x] Connect approved database rooms to guest booking requests and private dashboard readback; preserve sample stays.
 - [x] Verify booking validation/persistence, live inventory summaries, Gemini failure/retry and desktop/mobile flows; write Week 2 report.
 - [x] Verify current Gemini generation and contain provider outages within chat; live text responses and controlled outage/retry passed.
-- [ ] Connect Python outputs if required (no existing Python service endpoint or contract supplied).
+- [x] Close Python-or-API output requirement using actual date-specific database REST API vacancy and nightly pricing; no Python service claimed.
 - [x] Audit five Week 1 areas; add guest/owner validation, seasonal totals, safe photo editing and owner controls.
 - [x] Ground Gemini in approved public database listings without private guest access and verify real streaming.
 - [x] Complete README, safe environment example, technical report and evaluation checklist with honest evidence.
