@@ -7,6 +7,7 @@ export const Route = createFileRoute("/api/public/assistant")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (request.signal.aborted) return new Response(null, { status: 499 });
         if (request.headers.get("origin") !== new URL(request.url).origin)
           return Response.json({ error: "Please ask from the resort website." }, { status: 403 });
         const input = assistantRequestSchema.safeParse(await request.json().catch(() => null));
@@ -34,12 +35,15 @@ export const Route = createFileRoute("/api/public/assistant")({
           policies: policySections,
           faqs: guestFaqs,
         };
+        const generation = new AbortController();
+        const stopGeneration = () => generation.abort();
+        request.signal.addEventListener("abort", stopGeneration, { once: true });
         try {
           const upstream = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`,
             {
               method: "POST",
-              signal: request.signal,
+              signal: generation.signal,
               headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
               body: JSON.stringify({
                 systemInstruction: {
@@ -57,6 +61,7 @@ export const Route = createFileRoute("/api/public/assistant")({
             },
           );
           if (!upstream.ok || !upstream.body) {
+            request.signal.removeEventListener("abort", stopGeneration);
             console.error("Gemini request failed", upstream.status);
             const message =
               upstream.status === 429
@@ -68,18 +73,17 @@ export const Route = createFileRoute("/api/public/assistant")({
             );
           }
           const encoder = new TextEncoder();
+          const reader = upstream.body.getReader();
+          let cancelled = false;
           const stream = new ReadableStream({
             async start(controller) {
-              const reader = upstream.body?.getReader();
-              if (!reader) {
-                controller.close();
-                return;
-              }
               let buffer = "";
               let hasText = false;
               const decoder = new TextDecoder();
-              const emit = (value: object) =>
-                controller.enqueue(encoder.encode(JSON.stringify(value) + "\n"));
+              const emit = (value: object) => {
+                if (!cancelled && !generation.signal.aborted)
+                  controller.enqueue(encoder.encode(JSON.stringify(value) + "\n"));
+              };
               try {
                 while (true) {
                   const { value, done } = await reader.read();
@@ -105,7 +109,7 @@ export const Route = createFileRoute("/api/public/assistant")({
                 if (!hasText) throw new Error("Gemini returned no answer.");
                 emit({ done: true });
               } catch (error) {
-                if (!request.signal.aborted)
+                if (!cancelled && !generation.signal.aborted)
                   emit({
                     error:
                       error instanceof Error
@@ -113,21 +117,36 @@ export const Route = createFileRoute("/api/public/assistant")({
                         : "The answer was interrupted. Please try again.",
                   });
               } finally {
+                request.signal.removeEventListener("abort", stopGeneration);
                 reader.releaseLock();
-                controller.close();
+                if (!cancelled) controller.close();
               }
             },
-            cancel() {
-              return upstream.body?.cancel();
+            async cancel() {
+              cancelled = true;
+              generation.abort();
+              // Cancel the reader, not the locked upstream body. An abort may
+              // already have rejected its pending read; that is expected.
+              await reader.cancel().catch(() => {});
+              request.signal.removeEventListener("abort", stopGeneration);
             },
           });
           return new Response(stream, {
             headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
           });
-        } catch {
+        } catch (error) {
+          request.signal.removeEventListener("abort", stopGeneration);
+          if (
+            generation.signal.aborted ||
+            (typeof error === "object" &&
+              error !== null &&
+              "name" in error &&
+              error.name === "AbortError")
+          )
+            return new Response(null, { status: 499 });
           return Response.json(
             { error: "Could not reach Gemini. Please try again later." },
-            { status: request.signal.aborted ? 499 : 502 },
+            { status: 502 },
           );
         }
       },
