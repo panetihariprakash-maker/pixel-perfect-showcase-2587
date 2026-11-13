@@ -24,6 +24,9 @@
 - The public catalogue reads partner listings only through the public_listings() SQL function, which returns approved listings from approved owners with safe columns; photo access follows is_public_photo().
 - Audit history is written by database triggers into admin_audit_log, so every change is captured regardless of which client made it.
 - public."user" is a trigger-maintained account summary (synced from profiles, auth email, user_roles); its role column is display-only and never used for authorization.
-- The public assistant endpoint streams Gemini using server-only credentials and catalogue-only grounding; it never retrieves private guest data, so public Home conversations cannot disclose reservations.
+- The public assistant streams Gemini using server-only credentials, central demo facts and a schema-filtered anonymous public_listings() read; never pass private guest records or owner identifiers into public conversations.
 - Guest state writes are serialized and update UI only after successful persistence; loaded-state and identity guards prevent stale account writes and false success messages.
 - The floating assistant uses AI Elements for its transcript and composer while retaining the existing resort shell; conversation history lives only in component memory and clears on identity changes.
+- Validate guest requests and owner reservations with database triggers; demo room constants in the guest trigger must match the central catalogue so forged totals and capacities are rejected.
+- Owner stay totals sum individual nights using the same seasonal/discount calculation in UI and database; checkout is excluded so boundary stays are priced correctly.
+- Property reassignment is blocked until a transaction can transfer dependent reservations and media safely; draft photo removal only changes metadata so Cancel preserves stored photos.

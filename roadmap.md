@@ -1,4 +1,9 @@
 # Azure Ridge update
+- [x] Audit five Week 1 areas; add guest/owner validation, seasonal totals, safe photo editing and owner controls.
+- [x] Ground Gemini in approved public database listings without private guest access and verify real streaming.
+- [x] Complete README, safe environment example, technical report and evaluation checklist with honest evidence.
+- [x] Run tests, lint, automatic build and desktop/mobile guest workflows; document privileged-flow gaps.
+- [ ] Verify signup confirmation/recovery with a real receiving inbox and owner/admin presentation accounts (requires user's email interaction and authorized accounts).
 - [x] Replace scripted assistant with server-side Gemini, session context and error/retry states; verify live grounded answers.
 - [x] Save full enquiries and activity plans with confirmed writes and visible failures; verify private access.
 - [x] Document five feature areas, user flow, real database structure and Week 1 evidence.

@@ -50,6 +50,20 @@
       "when": 1791883601288,
       "tag": "0006_create_user_table",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794546394161,
+      "tag": "0007_week1_guest_validation",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794546422374,
+      "tag": "0008_week1_owner_controls",
+      "breakpoints": true
     }
   ]
 }

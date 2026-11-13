@@ -1,5 +1,7 @@
 # Week 1 technical improvement report
 
+Historical first improvement pass. See [current technical report](WEEK-1-TECHNICAL-REPORT.md) and [implementation report](WEEK-1-IMPLEMENTATION-REPORT.md) for the subsequent completion audit, database safeguards and latest evidence.
+
 ## Scope and provenance
 
 This report records the current implementation and the verified improvement work on 13 November 2026. It is not a claim that every existing feature was developed during the internship's first week, nor a fabricated first-person learning diary. The student should add their own actual learning experience and chronology before resubmission.

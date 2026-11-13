@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { effectivePrice, occupancyPercent } from "@/lib/owner";
+import { effectivePrice, occupancyPercent, stayAmount } from "@/lib/owner";
 
-const room = { price: 10000, seasonal_price: 15000, season_start: "2026-12-20", season_end: "2027-01-05", discount_pct: 10 };
+const room = {
+  price: 10000,
+  seasonal_price: 15000,
+  season_start: "2026-12-20",
+  season_end: "2027-01-05",
+  discount_pct: 10,
+};
 
 describe("owner pricing", () => {
+  it("sums regular and seasonal nights without charging checkout", () => {
+    expect(stayAmount(room, "2026-12-19", "2026-12-21")).toBe(22500);
+    expect(stayAmount(room, "2027-01-05", "2027-01-07")).toBe(22500);
+  });
   it("applies the discount to the nightly price outside the season", () => {
     expect(effectivePrice(room, "2026-11-01")).toBe(9000);
   });

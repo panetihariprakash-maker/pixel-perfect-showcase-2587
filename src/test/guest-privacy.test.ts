@@ -80,6 +80,15 @@ describe.skipIf(!ready)("Private guest data and payment integrity", () => {
       guestId: owner.id,
       payment: "Payment Ready/Test",
       status: "Pending",
+      roomId: "deluxe-valley",
+      checkIn: "2026-12-01",
+      checkOut: "2026-12-03",
+      guests: 2,
+      nights: 2,
+      total: 17000,
+      guestName: "Privacy Test Guest",
+      email: "guest@example.com",
+      phone: "+919876543210",
     };
     const insert = await request("/rest/v1/guest_bookings", publicKey, owner.token, "POST", {
       id: reference,
@@ -106,6 +115,64 @@ describe.skipIf(!ready)("Private guest data and payment integrity", () => {
     const res = await request("/rest/v1/user_roles", publicKey, owner.token, "POST", {
       user_id: owner.id,
       role: "operations",
+    });
+    expect(res.ok).toBe(false);
+  });
+  const bookingDetails = (id: string, guestId: string) => ({
+    id,
+    guestId,
+    payment: "Payment Ready/Test",
+    status: "Pending",
+    roomId: "deluxe-valley",
+    checkIn: "2026-12-01",
+    checkOut: "2026-12-03",
+    guests: 2,
+    nights: 2,
+    total: 17000,
+    guestName: "Validation Guest",
+    email: "guest@example.com",
+    phone: "+919876543210",
+  });
+  it("rejects guest counts above the Deluxe room capacity of two", async () => {
+    const owner = accounts[0];
+    if (!owner || !publicKey) throw new Error("Test account unavailable");
+    const id = reference + "-capacity";
+    const res = await request("/rest/v1/guest_bookings", publicKey, owner.token, "POST", {
+      id,
+      user_id: owner.id,
+      details: { ...bookingDetails(id, owner.id), guests: 3 },
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("rejects a forged total instead of the 17000 two-night amount", async () => {
+    const owner = accounts[0];
+    if (!owner || !publicKey) throw new Error("Test account unavailable");
+    const id = reference + "-amount";
+    const res = await request("/rest/v1/guest_bookings", publicKey, owner.token, "POST", {
+      id,
+      user_id: owner.id,
+      details: { ...bookingDetails(id, owner.id), total: 1 },
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("rejects checkout on or before check-in", async () => {
+    const owner = accounts[0];
+    if (!owner || !publicKey) throw new Error("Test account unavailable");
+    const id = reference + "-dates";
+    const res = await request("/rest/v1/guest_bookings", publicKey, owner.token, "POST", {
+      id,
+      user_id: owner.id,
+      details: { ...bookingDetails(id, owner.id), checkOut: "2026-12-01", nights: 0, total: 0 },
+    });
+    expect(res.ok).toBe(false);
+  });
+  it("rejects malformed saved state instead of breaking Dashboard array rendering", async () => {
+    const owner = accounts[0];
+    if (!owner || !publicKey) throw new Error("Test account unavailable");
+    const res = await request("/rest/v1/guest_state", publicKey, owner.token, "POST", {
+      user_id: owner.id,
+      plans: {},
+      enquiries: [],
     });
     expect(res.ok).toBe(false);
   });

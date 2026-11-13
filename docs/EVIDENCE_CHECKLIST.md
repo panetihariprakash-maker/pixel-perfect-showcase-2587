@@ -1,5 +1,7 @@
 # Week 1 evidence checklist
 
+For the latest evaluator-by-evaluator assessment, see [WEEK-1-EVALUATION-CHECKLIST.md](WEEK-1-EVALUATION-CHECKLIST.md).
+
 Capture your own current screenshots. Do not fabricate results or publish account credentials/guest personal information.
 
 - [ ] Homepage, existing navigation, unchanged resort photography.

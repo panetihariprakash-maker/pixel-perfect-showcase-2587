@@ -522,6 +522,7 @@ export type Database = {
       is_approved_owner: { Args: { _user_id: string }; Returns: boolean }
       is_privileged: { Args: never; Returns: boolean }
       is_public_photo: { Args: { _path: string }; Returns: boolean }
+      owner_applications_open: { Args: never; Returns: boolean }
       owner_can: { Args: { _perm: string; _user_id: string }; Returns: boolean }
       platform_announcement: { Args: never; Returns: string }
       public_listings: { Args: never; Returns: Json }

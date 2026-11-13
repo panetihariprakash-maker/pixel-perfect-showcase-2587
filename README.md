@@ -29,11 +29,14 @@ These are feature groupings, not five newly created pages. Existing URLs, inform
 - AI Elements for conversation, messages, composer and loading states.
 - Vitest for validation, parsing, pricing and live guest privacy checks.
 
-```text
-Browser → TanStack pages/components
-  ├─ Auth / owner-scoped database client → RLS → current database
-  ├─ AI POST /api/public/assistant → server-only Gemini key → Google Gemini SSE
-  └─ Demo operations → localStorage (never guest reservations)
+```mermaid
+flowchart LR
+ B[Browser / existing React screens] --> A[Auth and owner-scoped client]
+ A --> R[RLS and database triggers]
+ B --> S[POST /api/public/assistant]
+ S --> P[Anonymous approved public listings]
+ S --> G[Google Gemini streaming]
+ B --> D[Separate local operational demo]
 ```
 
 ## Important source files
@@ -62,13 +65,13 @@ src/
   start.ts                  Auth bearer, error and CSRF middleware
   server.ts                 Server error wrapper
   test/                     Existing and new tests
-drizzle/migrations/          Seven existing SQL migrations and their metadata
+drizzle/migrations/          Nine ordered SQL migrations and their metadata
 public/                      Favicon and robots configuration
 ```
 
 ## Database and data flow
 
-The project uses its existing Lovable Cloud backend, not an independently connected external database. No database or RLS change was made for this Week 1 update. All 12 existing public tables have RLS enabled.
+The project uses its existing Lovable Cloud backend, not an independently connected external database. The latest Week 1 update adds validation triggers and owner safeguards without new tables or disabling RLS. All 12 existing public tables have RLS enabled.
 
 | Existing table        | Purpose                                                                                     |
 | --------------------- | ------------------------------------------------------------------------------------------- |
@@ -85,7 +88,9 @@ The project uses its existing Lovable Cloud backend, not an independently connec
 | `platform_settings`   | Admin-controlled platform configuration                                                     |
 | `admin_audit_log`     | Trigger-created audit history                                                               |
 
-The seven SQL files under `drizzle/migrations/` are the schema source of truth. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant currently grounds only in the central resort catalogue, NOT partner listings or private database records.
+The nine SQL files under `drizzle/migrations/` are the schema source of truth. `drizzle/schema.ts` is intentionally a blank placeholder, not an ORM model. Public partner listings are projected through `public_listings()` with safe fields and approved owner/listing filtering. Photos reside in the private `listing-photos` bucket and use signed URLs. The assistant reads approved partner facts anonymously and strips unexpected fields; it never reads private guest records. The current public partner catalogue is empty.
+
+For a separate deployment, apply the SQL files in journal order using a migration administrator and preserve grants/policies/triggers. Provision `listing-photos` separately as private storage with a 10 MB limit; storage bucket provisioning is not in the SQL chain. Never generate models from the blank Drizzle placeholder or blindly replay applied migrations. In Lovable, use the managed migration workflow. New triggers validate guest amounts/dates/capacity, saved array shapes and owner reservation ownership/pricing/units; unsafe partial property transfer is blocked.
 
 ### Real versus demonstration data
 
@@ -113,7 +118,7 @@ Google consent and email delivery depend on the current hosted auth settings. Th
 2. Save it securely as server-only `GEMINI_API_KEY` using the project's secret form. Never put it in a frontend variable or commit it.
 3. Default model: `gemini-3.5-flash`. Optional server-only `GEMINI_MODEL` can select a model available to your Google project. Google billing, quotas, regional availability and key restrictions apply.
 4. Ask a question in the existing floating assistant. The browser posts language plus bounded conversation history to `/api/public/assistant`.
-5. The endpoint validates same-origin requests and input, supplies catalogue/policy grounding, calls `streamGenerateContent?alt=sse`, parses text deltas and streams newline-delimited JSON to the browser.
+5. The endpoint validates same-origin requests and input, reads only approved public partner listings, supplies catalogue/policy grounding, calls `streamGenerateContent?alt=sse`, parses text deltas and streams newline-delimited JSON to the browser.
 6. Loading, Stop and explicit Retry are available. Failed calls show an error, not a canned successful answer. Automatic retry loops are not used.
 
 The saved key was tested: authenticated model listing returned HTTP 200 and included the selected model; a live endpoint and browser answer returned the actual ₹8,500 Deluxe room rate with the correct non-payment/non-confirmation warning. This verifies the API integration, not any manual configuration of the AI Studio workspace by the agent.
@@ -124,7 +129,7 @@ The public assistant does not query private data or change bookings. Same-origin
 
 Use a current Node.js runtime and Bun; install dependencies with `bun install`, then `bun run dev`. The development page uses the configured Vite port (8080 in the Lovable sandbox).
 
-Existing browser configuration: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID`. These are generated public configuration, not service credentials. Preserve the generated client files.
+Existing browser configuration: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID`. These are generated public configuration, not service credentials. Preserve the generated client files. `.env.example` contains blank configuration slots only; store private values securely, never commit a populated secret-bearing file.
 
 Server configuration: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, privileged `SUPABASE_SERVICE_ROLE_KEY` when the hosting environment supplies it, `GEMINI_API_KEY`, optional `GEMINI_MODEL`, and existing managed `LOVABLE_API_KEY` for applicable platform integrations. Do not expose server credentials in `VITE_*`, source, logs or screenshots. Lovable Cloud manages its database credentials; it does not provide a downloadable service-role key.
 
@@ -137,6 +142,12 @@ Server configuration: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, privileged `SU
 
 ## Current limitations and future improvements
 
-Live payment, verified resort policies/contact/location, live catalogue inventory, full email-confirmation/Google-consent testing, shared operational persistence, partner listing AI grounding, cross-device guest-state conflict handling, AI abuse controls and full privileged owner/admin browser regression remain outstanding. The existing planning form is still deterministic; only the guest assistant is now a genuine Gemini conversation.
+Live payment, verified resort policies/contact/location, live guest/partner inventory integration, full email-confirmation/Google-consent testing, shared operational persistence, cross-device guest-state conflict handling, photo-orphan cleanup, AI abuse controls and full privileged owner/admin browser regression remain outstanding. The existing planning form is deterministic; the guest assistant is a genuine Gemini conversation. Owner values represent bookings, not collected payments. Public partner checkout is not implemented. Owner room-edit reapproval and independent publish-only permissions still need completion.
 
-See [Week 1 technical report](docs/WEEK_1_REPORT.md) and [evidence checklist](docs/EVIDENCE_CHECKLIST.md) for actual checks and honest gaps.
+## Current verification and resubmission
+
+Latest checks: **39 tests passed in 8 files**; automatic TypeScript/production build **OK**; changed-file lint **0 errors** (one warning). Full repository lint still fails on **1,147 formatting errors and 18 warnings**; this is disclosed rather than hidden or disabled.
+
+See [Week 1 technical report](docs/WEEK-1-TECHNICAL-REPORT.md), [evaluation checklist](docs/WEEK-1-EVALUATION-CHECKLIST.md), and [implementation report](docs/WEEK-1-IMPLEMENTATION-REPORT.md) for current checks and gaps. Older `WEEK_1_REPORT.md` and `EVIDENCE_CHECKLIST.md` record the previous improvement pass, not the latest completion audit.
+
+Latest browser verification used temporary confirmed accounts: login/refresh, edited-profile booking prefill, pending booking save/readback/cancel, full enquiry/activity persistence, guest admin denial, mobile drawer and logout succeeded; a real Gemini answer reflected the public database catalogue. Placeholder signup emails are blocked by the hosted service, with a clear actual error—real inbox confirmation/recovery remains manual. Do not claim production readiness or all five evaluation requirements COMPLETE until the checklist evidence is supplied.

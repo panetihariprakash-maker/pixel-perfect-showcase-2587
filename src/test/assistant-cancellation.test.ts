@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Route } from "@/routes/api/public/assistant";
 
 const handlers = Route.options.server?.handlers;
@@ -18,6 +18,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe("Assistant cancellation", () => {
+  beforeEach(() => {
+    vi.stubEnv("SUPABASE_URL", "https://test.invalid");
+    vi.stubEnv("SUPABASE_PUBLISHABLE_KEY", "test-public-key");
+  });
   it("returns 499 without contacting Gemini for an already cancelled request", async () => {
     const controller = new AbortController();
     controller.abort();
@@ -33,7 +37,13 @@ describe("Assistant cancellation", () => {
   });
   it("handles cancellation before upstream headers as 499, not 500", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-only-key");
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("Aborted", "AbortError")));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json([]))
+        .mockRejectedValueOnce(new DOMException("Aborted", "AbortError")),
+    );
     if (typeof handler !== "function") throw new Error("Assistant handler missing");
     const response = await handler({ request: request() } as Parameters<typeof handler>[0]);
     if (!(response instanceof Response)) throw new Error("Expected HTTP response");
@@ -42,12 +52,28 @@ describe("Assistant cancellation", () => {
   it("cancels the locked upstream reader safely when the response is closed", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-only-key");
     const cancel = vi.fn();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new ReadableStream({ cancel }))));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json([]))
+        .mockResolvedValueOnce(new Response(new ReadableStream({ cancel }))),
+    );
     if (typeof handler !== "function") throw new Error("Assistant handler missing");
     const response = await handler({ request: request() } as Parameters<typeof handler>[0]);
     if (!(response instanceof Response)) throw new Error("Expected HTTP response");
     expect(response.status).toBe(200);
     await response.body?.cancel();
     expect(cancel).toHaveBeenCalledOnce();
+  });
+  it("does not call Gemini when the public database query fails", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "test-only-key");
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({}, { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+    if (typeof handler !== "function") throw new Error("Assistant handler missing");
+    const response = await handler({ request: request() } as Parameters<typeof handler>[0]);
+    if (!(response instanceof Response)) throw new Error("Expected HTTP response");
+    expect(response.status).toBe(503);
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });
